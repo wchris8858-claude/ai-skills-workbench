@@ -363,18 +363,24 @@ export async function callSiliconFlowVision(
 
   // 添加图片
   for (const image of images) {
+    let imageUrl: string | undefined
+
     if (image.base64) {
-      contentParts.push({
-        type: 'image_url',
-        image_url: {
-          url: `data:image/jpeg;base64,${image.base64}`
-        }
-      })
+      // 检查 base64 是否已经包含 data URL 前缀
+      if (image.base64.startsWith('data:')) {
+        imageUrl = image.base64
+      } else {
+        imageUrl = `data:image/jpeg;base64,${image.base64}`
+      }
     } else if (image.url) {
+      imageUrl = image.url
+    }
+
+    if (imageUrl) {
       contentParts.push({
         type: 'image_url',
         image_url: {
-          url: image.url
+          url: imageUrl
         }
       })
     }
