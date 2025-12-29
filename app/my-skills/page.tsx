@@ -62,20 +62,24 @@ export default function MySkillsPage() {
   const handleSkillUpload = async (skillData: Partial<Skill>) => {
     if (!user) return
 
+    // 验证必填字段
+    const name = skillData.name || '未命名技能'
+    const description = skillData.description || '暂无描述'
+
     try {
       // 编辑模式：更新现有技能
       if (editingSkill?.id) {
         const updated = await updateSkill(editingSkill.id, {
-          name: skillData.name!,
-          description: skillData.description!,
+          name,
+          description,
           icon: skillData.icon || 'Sparkles',
           category: skillData.category || '我的技能',
           inputTypes: skillData.inputTypes || ['text'],
           placeholder: skillData.placeholder,
           content: skillData.content || '',
           metadata: {
-            name: skillData.name!,
-            description: skillData.description!,
+            name,
+            description,
             icon: skillData.icon || 'Sparkles',
             category: skillData.category || '我的技能',
             inputTypes: skillData.inputTypes || ['text'],
@@ -88,8 +92,8 @@ export default function MySkillsPage() {
       } else {
         // 创建模式：新建技能
         const newSkill = await createSkill({
-          name: skillData.name!,
-          description: skillData.description!,
+          name,
+          description,
           icon: skillData.icon || 'Sparkles',
           category: skillData.category || '我的技能',
           inputTypes: skillData.inputTypes || ['text'],
@@ -98,8 +102,8 @@ export default function MySkillsPage() {
           ownerId: user.id,
           content: skillData.content || '',
           metadata: {
-            name: skillData.name!,
-            description: skillData.description!,
+            name,
+            description,
             icon: skillData.icon || 'Sparkles',
             category: skillData.category || '我的技能',
             inputTypes: skillData.inputTypes || ['text'],

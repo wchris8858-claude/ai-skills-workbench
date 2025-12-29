@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Message } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { getOrCreateConversation } from '@/lib/db/conversations'
@@ -358,21 +359,25 @@ export function ConversationView({
           setConversationId(activeConvId)
         } else {
           console.error('Failed to create conversation ID')
+          // 继续执行，但不保存消息到数据库
         }
       }
 
+      // 保存用户消息（如果有有效的会话ID）
       if (activeConvId) {
-        // 保存用户消息，包含图片附件（只保存URL，不保存base64以节省存储空间）
-        await saveMessage(activeConvId, {
-          role: 'user',
-          content: currentInput,
-          attachments: currentImages.length > 0 ? currentImages.map(img => ({
-            type: 'image' as const,
-            url: img.url,
-          })) : undefined,
-        })
-      } else {
-        console.error('Conversation ID is null, cannot save user message')
+        try {
+          await saveMessage(activeConvId, {
+            role: 'user',
+            content: currentInput,
+            attachments: currentImages.length > 0 ? currentImages.map(img => ({
+              type: 'image' as const,
+              url: img.url,
+            })) : undefined,
+          })
+        } catch (saveError) {
+          console.error('Failed to save user message:', saveError)
+          // 继续执行 AI 请求，即使保存失败
+        }
       }
 
       // 验证图片数据完整性
@@ -675,7 +680,7 @@ export function ConversationView({
                       />
                     ) : (
                       <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-secondary/50 prose-pre:border prose-pre:border-border/50">
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
                       </div>
                     )
                   ) : (

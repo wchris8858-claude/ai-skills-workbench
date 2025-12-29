@@ -361,8 +361,8 @@ export default function HomePage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && filteredSkills.length > 0) {
-                      handleSkillClick(filteredSkills[0].id!)
+                    if (e.key === 'Enter' && filteredSkills.length > 0 && filteredSkills[0]?.id) {
+                      handleSkillClick(filteredSkills[0].id)
                     }
                   }}
                 />
