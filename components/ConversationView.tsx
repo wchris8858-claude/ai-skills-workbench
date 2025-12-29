@@ -26,6 +26,7 @@ import {
   ImageUploadPreview,
   EmptyState,
 } from './conversation'
+import { compressImage, compressImageToBase64 } from '@/lib/utils/image-compression'
 
 interface ConversationViewProps {
   skillId: string
@@ -126,25 +127,28 @@ export function ConversationView({
     loadConversation()
   }, [user, skillId, initialConversationId])
 
-  // 将文件转换为 base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
-  }
-
-  // 处理图片上传
+  // 处理图片上传（带压缩）
   const handleImageUpload = async (file: File) => {
     setIsUploading(true)
     try {
-      // 先获取 base64（用于 Vision API）
-      const base64Data = await fileToBase64(file)
+      // 压缩图片（最大 1920x1080，质量 0.8，最大 500KB）
+      const compressedFile = await compressImage(file, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.8,
+        maxSizeKB: 500,
+      })
+
+      // 压缩后获取 base64（用于 Vision API）
+      const base64Data = await compressImageToBase64(file, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.8,
+        maxSizeKB: 500,
+      })
 
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', compressedFile)
 
       const response = await fetch('/api/upload/image', {
         method: 'POST',
@@ -158,7 +162,7 @@ export function ConversationView({
         const newImage = {
           url: data.url,
           name: file.name,
-          base64: base64Data  // 保存完整的 data URL
+          base64: base64Data  // 保存压缩后的 data URL
         }
         setUploadedImages(prev => [...prev, newImage])
       } else {
