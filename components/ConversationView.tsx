@@ -14,7 +14,7 @@ import remarkGfm from 'remark-gfm'
 import { Message } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { getOrCreateConversation } from '@/lib/db/conversations'
-import { saveMessage, getConversationMessages } from '@/lib/db/messages'
+import { saveMessage, getConversationMessages, getMessagesBefore } from '@/lib/db/messages'
 import { recordUsage, checkRateLimit } from '@/lib/db/stats'
 import { toggleMessageFavorite, batchCheckFavorites } from '@/lib/db/favorites'
 import { ModelSelector } from './ModelSelector'
@@ -63,7 +63,12 @@ export function ConversationView({
   const [isUploading, setIsUploading] = useState(false)
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
 
+  // 分页状态
+  const [hasMoreHistory, setHasMoreHistory] = useState(false)
+  const [loadingMoreHistory, setLoadingMoreHistory] = useState(false)
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -88,6 +93,10 @@ export function ConversationView({
     }
   }, [mediaRecorder])
 
+  // 消息分页配置
+  const INITIAL_MESSAGE_LIMIT = 50  // 初始加载的消息数量
+  const LOAD_MORE_LIMIT = 20        // 每次加载更多的数量
+
   // 加载对话历史
   useEffect(() => {
     async function loadConversation() {
@@ -107,8 +116,17 @@ export function ConversationView({
 
         if (convId) {
           setConversationId(convId)
+          // 获取所有消息，但只显示最近的消息
           const historyMessages = await getConversationMessages(convId)
-          setMessages(historyMessages)
+
+          // 如果消息数量超过初始限制，只显示最近的消息
+          if (historyMessages.length > INITIAL_MESSAGE_LIMIT) {
+            setMessages(historyMessages.slice(-INITIAL_MESSAGE_LIMIT))
+            setHasMoreHistory(true)
+          } else {
+            setMessages(historyMessages)
+            setHasMoreHistory(false)
+          }
 
           // 批量检查收藏状态，避免 N+1 查询
           const assistantMessageIds = historyMessages
@@ -126,6 +144,46 @@ export function ConversationView({
 
     loadConversation()
   }, [user, skillId, initialConversationId])
+
+  // 加载更多历史消息
+  const loadMoreHistory = useCallback(async () => {
+    if (!conversationId || loadingMoreHistory || !hasMoreHistory || messages.length === 0) {
+      return
+    }
+
+    setLoadingMoreHistory(true)
+    try {
+      const oldestMessage = messages[0]
+      const result = await getMessagesBefore(
+        conversationId,
+        oldestMessage.timestamp,
+        LOAD_MORE_LIMIT
+      )
+
+      if (result.messages.length > 0) {
+        // 保存当前滚动位置
+        const container = messagesContainerRef.current
+        const previousScrollHeight = container?.scrollHeight || 0
+
+        setMessages(prev => [...result.messages, ...prev])
+        setHasMoreHistory(result.hasMore)
+
+        // 恢复滚动位置（保持视图不跳动）
+        requestAnimationFrame(() => {
+          if (container) {
+            const newScrollHeight = container.scrollHeight
+            container.scrollTop = newScrollHeight - previousScrollHeight
+          }
+        })
+      } else {
+        setHasMoreHistory(false)
+      }
+    } catch (error) {
+      console.error('Error loading more history:', error)
+    } finally {
+      setLoadingMoreHistory(false)
+    }
+  }, [conversationId, loadingMoreHistory, hasMoreHistory, messages])
 
   // 处理图片上传（带压缩）
   const handleImageUpload = async (file: File) => {
@@ -622,7 +680,30 @@ export function ConversationView({
             onShowModelInfo={handleShowModelInfo}
           />
         ) : (
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div ref={messagesContainerRef} className="max-w-3xl mx-auto space-y-6">
+            {/* 加载更多历史消息按钮 */}
+            {hasMoreHistory && (
+              <div className="flex justify-center py-2">
+                <button
+                  onClick={loadMoreHistory}
+                  disabled={loadingMoreHistory}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary rounded-full transition-colors disabled:opacity-50"
+                >
+                  {loadingMoreHistory ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      加载中...
+                    </>
+                  ) : (
+                    <>
+                      <span>↑</span>
+                      加载更早的消息
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
             {messages.map((message) => (
               <div
                 key={message.id}

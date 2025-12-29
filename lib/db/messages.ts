@@ -293,6 +293,99 @@ export async function getConversationTokenCount(
 }
 
 /**
+ * 分页获取消息
+ * @param conversationId 对话ID
+ * @param page 页码（从1开始）
+ * @param pageSize 每页数量
+ * @returns 消息列表和分页信息
+ */
+export async function getMessagesPaginated(
+  conversationId: string,
+  page: number = 1,
+  pageSize: number = 20
+): Promise<{
+  messages: Message[]
+  total: number
+  hasMore: boolean
+  page: number
+  pageSize: number
+}> {
+  // 先获取总数
+  const { count, error: countError } = await getDb()
+    .from('messages')
+    .select('*', { count: 'exact', head: true })
+    .eq('conversation_id', conversationId)
+
+  if (countError) {
+    console.error('Error counting messages:', countError)
+    return { messages: [], total: 0, hasMore: false, page, pageSize }
+  }
+
+  const total = count || 0
+  const offset = (page - 1) * pageSize
+
+  // 获取分页数据（按时间升序，最早的在前）
+  const { data, error } = await getDb()
+    .from('messages')
+    .select('id, role, content, attachments, created_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true })
+    .range(offset, offset + pageSize - 1)
+
+  if (error) {
+    console.error('Error fetching paginated messages:', error)
+    return { messages: [], total, hasMore: false, page, pageSize }
+  }
+
+  const messages = (data || []).map(partialMessageToMessage)
+  const hasMore = offset + messages.length < total
+
+  return {
+    messages,
+    total,
+    hasMore,
+    page,
+    pageSize,
+  }
+}
+
+/**
+ * 获取更早的消息（用于无限滚动加载历史）
+ * @param conversationId 对话ID
+ * @param beforeTimestamp 在此时间之前的消息
+ * @param limit 获取数量
+ */
+export async function getMessagesBefore(
+  conversationId: string,
+  beforeTimestamp: Date,
+  limit: number = 20
+): Promise<{
+  messages: Message[]
+  hasMore: boolean
+}> {
+  const { data, error } = await getDb()
+    .from('messages')
+    .select('id, role, content, attachments, created_at')
+    .eq('conversation_id', conversationId)
+    .lt('created_at', beforeTimestamp.toISOString())
+    .order('created_at', { ascending: false })
+    .limit(limit + 1) // 多获取一条用于判断是否还有更多
+
+  if (error) {
+    console.error('Error fetching messages before:', error)
+    return { messages: [], hasMore: false }
+  }
+
+  const hasMore = (data || []).length > limit
+  const messages = (data || [])
+    .slice(0, limit)
+    .reverse()
+    .map(partialMessageToMessage)
+
+  return { messages, hasMore }
+}
+
+/**
  * 搜索消息内容
  */
 export async function searchMessages(
