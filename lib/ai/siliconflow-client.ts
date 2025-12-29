@@ -350,7 +350,16 @@ export async function callSiliconFlowVision(
   temperature?: number,
   maxTokens?: number
 ): Promise<string> {
-  const client = new SiliconFlowClient()
+  console.log(`[SiliconFlow Vision] 开始调用，模型: ${model}`)
+  console.log(`[SiliconFlow Vision] 图片数量: ${images.length}`)
+
+  const apiKey = process.env.SILICONFLOW_API_KEY
+  const baseURL = process.env.SILICONFLOW_API_ENDPOINT || 'https://api.siliconflow.cn/v1'
+
+  if (!apiKey) {
+    console.error('[SiliconFlow Vision] API Key 未配置')
+    throw new Error('SiliconFlow API key is not configured')
+  }
 
   // 构建多模态消息内容
   const contentParts: Array<{
@@ -362,18 +371,22 @@ export async function callSiliconFlowVision(
   ]
 
   // 添加图片
-  for (const image of images) {
+  for (let i = 0; i < images.length; i++) {
+    const image = images[i]
     let imageUrl: string | undefined
 
     if (image.base64) {
       // 检查 base64 是否已经包含 data URL 前缀
       if (image.base64.startsWith('data:')) {
         imageUrl = image.base64
+        console.log(`[SiliconFlow Vision] 图片 ${i}: 使用已有的 data URL (长度: ${imageUrl.length})`)
       } else {
         imageUrl = `data:image/jpeg;base64,${image.base64}`
+        console.log(`[SiliconFlow Vision] 图片 ${i}: 添加 data URL 前缀 (长度: ${imageUrl.length})`)
       }
     } else if (image.url) {
       imageUrl = image.url
+      console.log(`[SiliconFlow Vision] 图片 ${i}: 使用外部 URL: ${imageUrl.substring(0, 80)}...`)
     }
 
     if (imageUrl) {
@@ -383,10 +396,14 @@ export async function callSiliconFlowVision(
           url: imageUrl
         }
       })
+    } else {
+      console.warn(`[SiliconFlow Vision] 图片 ${i}: 无有效的 URL 或 base64`)
     }
   }
 
-  const response = await client.chatCompletions({
+  console.log(`[SiliconFlow Vision] 总共 ${contentParts.length} 个内容块`)
+
+  const requestBody = {
     model,
     messages: [
       {
@@ -396,11 +413,40 @@ export async function callSiliconFlowVision(
     ],
     temperature: temperature ?? 0.7,
     max_tokens: maxTokens ?? 4096,
-  })
-
-  if (response.choices && response.choices.length > 0) {
-    return response.choices[0].message.content
   }
 
-  throw new Error('No response from SiliconFlow Vision API')
+  console.log(`[SiliconFlow Vision] 发送请求到 ${baseURL}/chat/completions`)
+
+  try {
+    const response = await fetch(`${baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(requestBody),
+    })
+
+    console.log(`[SiliconFlow Vision] 响应状态: ${response.status}`)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`[SiliconFlow Vision] API 错误响应: ${errorText}`)
+      throw new Error(`SiliconFlow Vision API error: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log(`[SiliconFlow Vision] 响应成功`)
+
+    if (data.choices && data.choices.length > 0) {
+      const content = data.choices[0].message.content
+      console.log(`[SiliconFlow Vision] 返回内容长度: ${content.length}`)
+      return content
+    }
+
+    throw new Error('No response from SiliconFlow Vision API')
+  } catch (error) {
+    console.error('[SiliconFlow Vision] 调用失败:', error)
+    throw error
+  }
 }

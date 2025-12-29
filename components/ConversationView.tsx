@@ -1,19 +1,11 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Send,
   Mic,
   Image as ImageIcon,
-  Copy,
-  RefreshCw,
-  Heart,
   Loader2,
-  Check,
-  Sparkles,
-  Zap,
-  X,
-  Upload,
   StopCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -23,10 +15,16 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getOrCreateConversation } from '@/lib/db/conversations'
 import { saveMessage, getConversationMessages } from '@/lib/db/messages'
 import { recordUsage, checkRateLimit } from '@/lib/db/stats'
-import { toggleMessageFavorite, isMessageFavorited, batchCheckFavorites } from '@/lib/db/favorites'
+import { toggleMessageFavorite, batchCheckFavorites } from '@/lib/db/favorites'
 import { ModelSelector } from './ModelSelector'
 import { ModelInfoDialog } from './ModelInfoDialog'
-import { type ModelConfig, AVAILABLE_MODELS } from '@/lib/models/config'
+import { type ModelConfig } from '@/lib/models/config'
+import {
+  MessageActions,
+  CopywriterMessage,
+  ImageUploadPreview,
+  EmptyState,
+} from './conversation'
 
 interface ConversationViewProps {
   skillId: string
@@ -59,7 +57,7 @@ export function ConversationView({
   const [selectedModelId, setSelectedModelId] = useState<string>(modelInfo || 'claude-haiku-4-5-20251001')
   const [selectedModelConfig, setSelectedModelConfig] = useState<ModelConfig | null>(null)
   const [showModelInfo, setShowModelInfo] = useState(false)
-  const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; name: string }>>([])
+  const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; name: string; base64?: string }>>([])
   const [isUploading, setIsUploading] = useState(false)
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
 
@@ -127,11 +125,25 @@ export function ConversationView({
     loadConversation()
   }, [user, skillId, initialConversationId])
 
+  // 将文件转换为 base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
   // 处理图片上传
   const handleImageUpload = async (file: File) => {
     console.log('Starting image upload:', file.name, file.size, file.type)
     setIsUploading(true)
     try {
+      // 先获取 base64（用于 Vision API）
+      const base64Data = await fileToBase64(file)
+      console.log('Base64 generated, length:', base64Data.length)
+
       const formData = new FormData()
       formData.append('file', file)
 
@@ -145,12 +157,20 @@ export function ConversationView({
       console.log('Upload response data:', data)
 
       if (data.success) {
-        const newImage = { url: data.url, name: file.name }
-        console.log('Adding image to state:', newImage)
+        // 同时保存 URL 和 base64
+        const newImage = {
+          url: data.url,
+          name: file.name,
+          base64: base64Data  // 保存完整的 data URL
+        }
+        console.log('Adding image to state with base64:', {
+          url: newImage.url.substring(0, 50),
+          base64Length: newImage.base64.length
+        })
         setUploadedImages(prev => {
-          console.log('Previous images:', prev)
+          console.log('Previous images:', prev.length)
           const updated = [...prev, newImage]
-          console.log('Updated images:', updated)
+          console.log('Updated images:', updated.length)
           return updated
         })
       } else {
@@ -193,9 +213,36 @@ export function ConversationView({
       recorder.start()
       setMediaRecorder(recorder)
       setIsRecording(true)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Recording error:', error)
-      alert('无法访问麦克风，请检查浏览器权限设置')
+
+      // 根据错误类型给出更具体的提示
+      let errorMessage = '无法访问麦克风'
+      if (error instanceof DOMException) {
+        switch (error.name) {
+          case 'NotAllowedError':
+          case 'PermissionDeniedError':
+            errorMessage = '麦克风权限被拒绝，请在浏览器设置中允许访问麦克风'
+            break
+          case 'NotFoundError':
+          case 'DevicesNotFoundError':
+            errorMessage = '未检测到麦克风设备，请确认麦克风已正确连接'
+            break
+          case 'NotReadableError':
+          case 'TrackStartError':
+            errorMessage = '麦克风被其他应用占用，请关闭其他正在使用麦克风的应用'
+            break
+          case 'OverconstrainedError':
+            errorMessage = '麦克风不支持所需的音频格式'
+            break
+          case 'SecurityError':
+            errorMessage = '安全限制：请使用 HTTPS 连接或 localhost'
+            break
+          default:
+            errorMessage = `麦克风错误: ${error.name}`
+        }
+      }
+      alert(errorMessage)
     }
   }
 
@@ -211,6 +258,12 @@ export function ConversationView({
   // 语音转文字
   const handleSpeechToText = async (audioBlob: Blob) => {
     try {
+      // 检查录音是否有效
+      if (audioBlob.size < 1000) {
+        alert('录音时间太短，请重新录制')
+        return
+      }
+
       const formData = new FormData()
       formData.append('file', audioBlob, 'recording.webm')
       formData.append('language', 'zh')
@@ -225,12 +278,38 @@ export function ConversationView({
       if (data.success && data.text) {
         setInput(prev => prev + (prev ? ' ' : '') + data.text)
       } else {
-        const errorMsg = data.error?.message || (typeof data.error === 'string' ? data.error : '未知错误')
-        alert('语音识别失败: ' + errorMsg)
+        // 根据错误类型给出更具体的提示
+        let errorMsg = '语音识别失败'
+        const errorDetail = data.error?.message || (typeof data.error === 'string' ? data.error : '')
+
+        if (errorDetail.toLowerCase().includes('api key') || errorDetail.toLowerCase().includes('unauthorized')) {
+          errorMsg = '语音服务未配置，请联系管理员'
+        } else if (errorDetail.toLowerCase().includes('timeout') || errorDetail.toLowerCase().includes('超时')) {
+          errorMsg = '语音识别超时，请尝试说话更短一些'
+        } else if (errorDetail.toLowerCase().includes('format') || errorDetail.toLowerCase().includes('格式')) {
+          errorMsg = '音频格式不支持，请重试'
+        } else if (errorDetail.toLowerCase().includes('empty') || errorDetail.toLowerCase().includes('空')) {
+          errorMsg = '未检测到语音内容，请重新录制'
+        } else if (errorDetail) {
+          errorMsg = `语音识别失败: ${errorDetail}`
+        }
+
+        alert(errorMsg)
       }
     } catch (error) {
       console.error('STT error:', error)
-      alert('语音识别失败: 网络错误或服务不可用')
+
+      // 判断网络错误类型
+      let errorMsg = '语音识别失败'
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMsg = '网络连接失败，请检查网络后重试'
+      } else if (error instanceof Error && error.name === 'AbortError') {
+        errorMsg = '请求被取消'
+      } else {
+        errorMsg = '语音识别服务暂不可用，请稍后重试'
+      }
+
+      alert(errorMsg)
     }
   }
 
@@ -283,24 +362,48 @@ export function ConversationView({
       }
 
       if (activeConvId) {
+        // 保存用户消息，包含图片附件（只保存URL，不保存base64以节省存储空间）
         await saveMessage(activeConvId, {
           role: 'user',
           content: currentInput,
+          attachments: currentImages.length > 0 ? currentImages.map(img => ({
+            type: 'image' as const,
+            url: img.url,
+          })) : undefined,
         })
       } else {
         console.error('Conversation ID is null, cannot save user message')
       }
 
+      // 验证图片数据完整性
+      const validImages = currentImages.filter(img => {
+        if (!img.base64) {
+          console.warn('[ConversationView] 跳过无效图片（缺少 base64）:', img.url?.substring(0, 50))
+          return false
+        }
+        return true
+      })
+
       // 调试：打印发送的图片信息
       console.log('[ConversationView] Sending request with images:', {
         skillId,
         messageLength: currentInput.length,
-        imageCount: currentImages.length,
-        imageUrls: currentImages.map(img => ({
+        totalImages: currentImages.length,
+        validImages: validImages.length,
+        imageDetails: validImages.map(img => ({
           urlPrefix: img.url.substring(0, 80),
-          isDataUrl: img.url.startsWith('data:'),
+          hasBase64: !!img.base64,
+          base64Length: img.base64?.length || 0,
+          base64Prefix: img.base64?.substring(0, 30),
         }))
       })
+
+      // 准备 attachments 数据，包含 base64 用于 Vision API
+      const attachments = validImages.map(img => ({
+        type: 'image' as const,
+        url: img.url,
+        base64: img.base64,  // 传递 base64 用于 Vision API
+      }))
 
       const response = await fetch('/api/claude/chat', {
         method: 'POST',
@@ -309,7 +412,7 @@ export function ConversationView({
           skillId,
           message: currentInput,
           model: selectedModelId,
-          images: currentImages.map(img => img.url),
+          attachments,  // 使用 attachments 替代 images
         })
       })
 
@@ -409,6 +512,20 @@ export function ConversationView({
     const startTime = Date.now()
 
     try {
+      // 准备原始消息的附件（如果有）
+      // 注意：历史消息中可能只有 URL，没有 base64
+      // 对于需要 base64 的 Vision API，这种情况下图片分析将被跳过
+      const attachments = userMessage.attachments?.map(att => ({
+        type: att.type,
+        url: att.url,
+        base64: att.base64,
+      })) || []
+
+      console.log('[Regenerate] Using original attachments:', {
+        count: attachments.length,
+        hasBase64: attachments.some(a => !!a.base64),
+      })
+
       const response = await fetch('/api/claude/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -416,7 +533,7 @@ export function ConversationView({
           skillId,
           message: userMessage.content,
           model: selectedModelId,
-          images: [], // 重新生成时不包含图片
+          attachments, // 重新生成时包含原始图片
         })
       })
 
@@ -523,24 +640,13 @@ export function ConversationView({
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-20 animate-fade-in">
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-accent/5">
-              <Sparkles className="h-10 w-10 text-accent" />
-            </div>
-            <h2 className="text-2xl font-bold mb-3 text-foreground">{skillName}</h2>
-            <p className="text-muted-foreground max-w-md mb-4">
-              {placeholder || '开始对话，探索 AI 的无限可能'}
-            </p>
-
-            {/* 模型选择器 */}
-            <div className="mt-4">
-              <ModelSelector
-                selectedModel={selectedModelId}
-                onModelChange={handleModelChange}
-                onShowModelInfo={handleShowModelInfo}
-              />
-            </div>
-          </div>
+          <EmptyState
+            skillName={skillName}
+            placeholder={placeholder}
+            selectedModelId={selectedModelId}
+            onModelChange={handleModelChange}
+            onShowModelInfo={handleShowModelInfo}
+          />
         ) : (
           <div className="max-w-3xl mx-auto space-y-6">
             {messages.map((message) => (
@@ -561,38 +667,12 @@ export function ConversationView({
                 >
                   {message.role === 'assistant' ? (
                     skillId === 'moments-copywriter' ? (
-                      // 朋友圈文案特殊处理 - 每个方案独立显示
-                      <div className="space-y-4">
-                        {message.content.split(/---方案\d+---/).filter(s => s.trim()).map((solution, idx) => (
-                          <div key={idx} className="relative border border-border/30 rounded-lg p-4 bg-secondary/10">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="text-sm font-medium text-accent">方案 {idx + 1}</span>
-                              <button
-                                onClick={() => handleCopy(solution.trim(), `${message.id}-${idx}`)}
-                                className={cn(
-                                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs',
-                                  'text-muted-foreground transition-all duration-200',
-                                  'hover:bg-accent/10 hover:text-accent'
-                                )}
-                                title="复制此方案"
-                              >
-                                {copied === `${message.id}-${idx}` ? (
-                                  <>
-                                    <Check className="w-3.5 h-3.5 text-accent" />
-                                    <span className="text-accent">已复制</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3.5 h-3.5" />
-                                    <span>复制</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                            <p className="whitespace-pre-wrap leading-relaxed text-foreground">{solution.trim()}</p>
-                          </div>
-                        ))}
-                      </div>
+                      <CopywriterMessage
+                        content={message.content}
+                        messageId={message.id}
+                        copied={copied}
+                        onCopy={handleCopy}
+                      />
                     ) : (
                       <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-secondary/50 prose-pre:border prose-pre:border-border/50">
                         <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -603,58 +683,15 @@ export function ConversationView({
                   )}
 
                   {message.role === 'assistant' && (
-                    <div className="flex items-center gap-1 mt-4 pt-3 border-t border-border/30">
-                      <button
-                        onClick={() => handleCopy(message.content, message.id)}
-                        className={cn(
-                          'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs',
-                          'text-muted-foreground transition-all duration-200',
-                          'hover:bg-accent/10 hover:text-accent'
-                        )}
-                        title="复制"
-                      >
-                        {copied === message.id ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-accent" />
-                            <span className="text-accent">已复制</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>复制</span>
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleRegenerate(message.id)}
-                        className={cn(
-                          'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs',
-                          'text-muted-foreground transition-all duration-200',
-                          'hover:bg-accent/10 hover:text-accent'
-                        )}
-                        title="重新生成"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>重新生成</span>
-                      </button>
-                      <button
-                        onClick={() => handleFavorite(message.id)}
-                        className={cn(
-                          'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs',
-                          'transition-all duration-200',
-                          favorited.has(message.id)
-                            ? 'text-red-500 hover:bg-red-500/10'
-                            : 'text-muted-foreground hover:bg-accent/10 hover:text-accent'
-                        )}
-                        title={favorited.has(message.id) ? "取消收藏" : "收藏"}
-                      >
-                        <Heart
-                          className="w-3.5 h-3.5"
-                          fill={favorited.has(message.id) ? "currentColor" : "none"}
-                        />
-                        <span>{favorited.has(message.id) ? '已收藏' : '收藏'}</span>
-                      </button>
-                    </div>
+                    <MessageActions
+                      messageId={message.id}
+                      content={message.content}
+                      copied={copied}
+                      favorited={favorited.has(message.id)}
+                      onCopy={handleCopy}
+                      onRegenerate={handleRegenerate}
+                      onFavorite={handleFavorite}
+                    />
                   )}
                 </div>
               </div>
@@ -691,32 +728,10 @@ export function ConversationView({
           )}
 
           {/* 已上传的图片预览 */}
-          {uploadedImages.length > 0 && (
-            <div className="flex gap-2 flex-wrap mb-3 p-3 bg-accent/10 border border-accent/30 rounded-lg">
-              <div className="w-full text-xs text-accent mb-2">
-                已上传 {uploadedImages.length} 张图片，发送消息时将一起发送
-              </div>
-              {uploadedImages.map((img) => (
-                <div
-                  key={img.url}
-                  className="relative group rounded-lg overflow-hidden border-2 border-accent/50 bg-background"
-                >
-                  <img
-                    src={img.url}
-                    alt={img.name}
-                    className="w-20 h-20 object-cover"
-                    onError={(e) => console.error('Image failed to load:', img.url, e)}
-                  />
-                  <button
-                    onClick={() => removeImage(img.url)}
-                    className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          <ImageUploadPreview
+            images={uploadedImages}
+            onRemove={removeImage}
+          />
 
           <div className="flex items-end gap-3">
             <div className="flex-1 valley-search !py-2">

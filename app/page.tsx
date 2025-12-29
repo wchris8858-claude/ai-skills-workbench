@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { SkillCard } from '@/components/skills/SkillCard'
-import { PRESET_SKILLS, SKILL_CATEGORIES, Skill } from '@/types'
+import { SKILL_CATEGORIES, Skill } from '@/types'
+import { PRESET_SKILLS } from '@/lib/skills/config'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   Search,

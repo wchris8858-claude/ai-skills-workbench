@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
 import { parseSkillFile } from '@/lib/skills/parser'
-import { PRESET_SKILLS } from '@/types'
+import { PRESET_SKILLS } from '@/lib/skills/config'
 import { withErrorHandler } from '@/lib/middleware/error-handler'
 
 async function handler() {

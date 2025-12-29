@@ -4,6 +4,8 @@
  * 生产环境建议使用 Redis
  */
 
+import { NextResponse } from 'next/server'
+
 interface RateLimitConfig {
   requests: number    // 允许的请求数
   windowMs: number   // 时间窗口（毫秒）
@@ -167,19 +169,18 @@ export function createRateLimitHeaders(result: RateLimitResult): Headers {
 /**
  * 速率限制错误响应
  */
-export function rateLimitExceededResponse(result: RateLimitResult): Response {
+export function rateLimitExceededResponse(result: RateLimitResult): NextResponse {
   const retryAfter = Math.ceil((result.resetTime - Date.now()) / 1000)
-  
-  return new Response(
-    JSON.stringify({
+
+  return NextResponse.json(
+    {
       error: '请求过于频繁，请稍后再试',
       code: 'RATE_LIMIT_EXCEEDED',
       retryAfter,
-    }),
+    },
     {
       status: 429,
       headers: {
-        'Content-Type': 'application/json',
         'Retry-After': retryAfter.toString(),
         'X-RateLimit-Limit': result.limit.toString(),
         'X-RateLimit-Remaining': '0',

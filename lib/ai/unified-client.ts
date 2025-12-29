@@ -126,19 +126,25 @@ export async function callVisionModel(
     { type: 'text', text: prompt }
   ]
 
+  console.log(`[Unified Vision] 处理 ${images.length} 张图片`)
+
   // 添加图片
-  for (const image of images) {
+  for (let i = 0; i < images.length; i++) {
+    const image = images[i]
     let imageUrl: string | undefined
 
     if (image.base64) {
       // 检查 base64 是否已经包含 data URL 前缀
       if (image.base64.startsWith('data:')) {
         imageUrl = image.base64
+        console.log(`[Unified Vision] 图片 ${i}: 使用已有的 data URL (长度: ${imageUrl.length})`)
       } else {
         imageUrl = `data:image/jpeg;base64,${image.base64}`
+        console.log(`[Unified Vision] 图片 ${i}: 添加 data URL 前缀 (长度: ${imageUrl.length})`)
       }
     } else if (image.url) {
       imageUrl = image.url
+      console.log(`[Unified Vision] 图片 ${i}: 使用外部 URL: ${imageUrl.substring(0, 80)}...`)
     }
 
     if (imageUrl) {
@@ -148,8 +154,27 @@ export async function callVisionModel(
           url: imageUrl
         }
       })
+    } else {
+      console.warn(`[Unified Vision] 图片 ${i}: 无有效的 URL 或 base64`)
     }
   }
+
+  console.log(`[Unified Vision] 总共 ${contentParts.length} 个内容块 (1 text + ${contentParts.length - 1} images)`)
+
+  const requestBody = {
+    model,
+    messages: [
+      {
+        role: 'user',
+        content: contentParts
+      }
+    ],
+    temperature: temperature ?? 0.7,
+    max_tokens: maxTokens ?? 4096,
+  }
+
+  console.log(`[Unified Vision] 发送请求到 ${endpoint}/chat/completions`)
+  console.log(`[Unified Vision] 模型: ${model}`)
 
   try {
     const response = await fetch(`${endpoint}/chat/completions`, {
@@ -158,25 +183,19 @@ export async function callVisionModel(
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: 'user',
-            content: contentParts
-          }
-        ],
-        temperature: temperature ?? 0.7,
-        max_tokens: maxTokens ?? 4096,
-      }),
+      body: JSON.stringify(requestBody),
     })
+
+    console.log(`[Unified Vision] 响应状态: ${response.status}`)
 
     if (!response.ok) {
       const errorText = await response.text()
+      console.error(`[Unified Vision] API 错误响应: ${errorText}`)
       throw new Error(`Vision API error: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()
+    console.log(`[Unified Vision] 响应数据:`, JSON.stringify(data).substring(0, 500))
 
     // 提取响应内容
     let content = ''
@@ -185,9 +204,10 @@ export async function callVisionModel(
       content = firstChoice.message?.content || firstChoice.text || ''
     }
 
+    console.log(`[Unified Vision] 提取的内容长度: ${content.length}`)
     return content
   } catch (error) {
-    console.error('Vision API call failed:', error)
+    console.error('[Unified Vision] API 调用失败:', error)
     throw error
   }
 }

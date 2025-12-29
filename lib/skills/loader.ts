@@ -3,7 +3,8 @@
  * 负责从文件系统加载和管理 Skill 文件
  */
 
-import { Skill, SkillSource, PRESET_SKILLS } from '@/types'
+import { Skill, SkillSource } from '@/types'
+import { PRESET_SKILLS } from '@/lib/skills/config'
 import { parseSkillFile, validateSkillFile, ParsedSkill } from './parser'
 
 // 缓存已加载的 Skills

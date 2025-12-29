@@ -189,18 +189,22 @@ export const AVAILABLE_MODELS = {
   },
 }
 
-// 每个技能的模型配置
+/**
+ * 每个技能的模型配置
+ * 预设技能和扩展技能的模型配置都在这里
+ */
 export const SKILL_MODEL_CONFIG: Record<string, SkillModelMapping> = {
-  // 朋友圈文案 - Claude Opus 创作 + 视觉理解
+  // =========== 预设技能 ===========
+  // 朋友圈文案 - Claude Opus 创作 + SiliconFlow 视觉理解
   'moments-copywriter': {
     text: {
       ...AVAILABLE_MODELS.anthropic['claude-opus'],
       temperature: 0.8, // 提高创意性
     },
-    // 视觉模型用于分析用户上传的图片
     vision: {
-      ...AVAILABLE_MODELS.google['gemini-pro-vision'],
-      temperature: 0.5, // 准确描述图片内容
+      ...AVAILABLE_MODELS.siliconflow['qwen3-vl-a3b'],
+      type: 'vision' as const,
+      temperature: 0.5,
     },
   },
 
@@ -208,7 +212,7 @@ export const SKILL_MODEL_CONFIG: Record<string, SkillModelMapping> = {
   'video-rewriter': {
     text: {
       ...AVAILABLE_MODELS.anthropic['claude-opus'],
-      temperature: 0.5, // 保持稳定
+      temperature: 0.5,
     },
   },
 
@@ -224,7 +228,7 @@ export const SKILL_MODEL_CONFIG: Record<string, SkillModelMapping> = {
   'meeting-transcriber': {
     text: {
       ...AVAILABLE_MODELS.anthropic['claude-haiku'],
-      temperature: 0.2, // 准确整理
+      temperature: 0.2,
     },
   },
 
@@ -248,20 +252,26 @@ export const SKILL_MODEL_CONFIG: Record<string, SkillModelMapping> = {
   'poster-creator': {
     text: {
       ...AVAILABLE_MODELS.google['gemini-pro-vision'],
-      temperature: 0.6, // 创意设计
+      temperature: 0.6,
     },
     image: AVAILABLE_MODELS.image['gpt-image'],
   },
 
-  // AI 选片修片 - Gemini Vision + Nano Banana
+  // AI 选片修片 - Claude + SiliconFlow Vision 分析 + Nano Banana 生成
   'photo-selector': {
     text: {
-      ...AVAILABLE_MODELS.google['gemini-pro-vision'],
-      temperature: 0.3, // 准确分析
+      ...AVAILABLE_MODELS.anthropic['claude-opus'],
+      temperature: 0.3,
+    },
+    vision: {
+      ...AVAILABLE_MODELS.siliconflow['qwen3-vl-a3b'],
+      type: 'vision' as const,
+      temperature: 0.3,
     },
     image: AVAILABLE_MODELS.image['nano-banana'],
   },
 
+  // =========== 扩展技能 ===========
   // 计划制定 - Gemini Vision
   'plan-maker': {
     text: {
@@ -397,4 +407,20 @@ export const UNIFIED_API_ENDPOINT = 'https://api4.mygptlife.com/v1'
 // 检查是否配置了统一 API
 export function isAPIConfigured(): boolean {
   return Boolean(process.env.UNIFIED_API_KEY)
+}
+
+/**
+ * 根据模型 ID 获取模型配置
+ * 用于支持前端模型选择器覆盖默认模型
+ */
+export function getModelConfigById(modelId: string): ModelConfig | null {
+  // 遍历所有提供商的模型
+  for (const provider of Object.values(AVAILABLE_MODELS)) {
+    for (const config of Object.values(provider)) {
+      if (config.model === modelId) {
+        return config as ModelConfig
+      }
+    }
+  }
+  return null
 }

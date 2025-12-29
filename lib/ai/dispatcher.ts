@@ -7,7 +7,7 @@
 
 import { callTextModel, callImageModel, callVisionModel } from './unified-client'
 import { callSiliconFlowText, callSiliconFlowImage, callSiliconFlowVision } from './siliconflow-client'
-import { getSkillModelConfig, type ModelProvider } from '../models/config'
+import { getSkillModelConfig, getModelConfigById, type ModelProvider, type ModelConfig } from '../models/config'
 
 export interface AIRequest {
   skillId: string
@@ -18,6 +18,7 @@ export interface AIRequest {
     url: string
     base64?: string
   }[]
+  modelOverride?: string // 前端指定的模型，覆盖默认配置
 }
 
 export interface AIResponse {
@@ -36,9 +37,23 @@ export interface AIResponse {
  * - 将分析结果与用户输入结合后再调用文本模型
  */
 export async function dispatchAI(request: AIRequest): Promise<AIResponse> {
-  const modelConfig = getSkillModelConfig(request.skillId)
-  const textModel = modelConfig.text
-  const visionModel = modelConfig.vision
+  const skillModelConfig = getSkillModelConfig(request.skillId)
+  const visionModel = skillModelConfig.vision
+
+  // 支持前端模型覆盖：如果提供了 modelOverride，尝试使用它
+  let textModel: ModelConfig = skillModelConfig.text
+  let usingOverride = false
+
+  if (request.modelOverride) {
+    const overrideConfig = getModelConfigById(request.modelOverride)
+    if (overrideConfig && overrideConfig.type === 'text') {
+      textModel = overrideConfig
+      usingOverride = true
+      console.log('[AI Dispatch] 使用前端指定的模型:', request.modelOverride)
+    } else {
+      console.log('[AI Dispatch] 前端指定的模型无效或不是文本模型，使用默认配置:', request.modelOverride)
+    }
+  }
 
   const provider = textModel.provider
   const model = textModel.model
@@ -48,6 +63,9 @@ export async function dispatchAI(request: AIRequest): Promise<AIResponse> {
   // 调试：打印配置信息
   console.log('[AI Dispatch] Config:', {
     skillId: request.skillId,
+    modelOverride: request.modelOverride,
+    usingOverride,
+    actualModel: model,
     hasAttachments: !!(request.attachments && request.attachments.length > 0),
     attachmentsCount: request.attachments?.length || 0,
     hasVisionModel: !!visionModel,
@@ -70,8 +88,17 @@ export async function dispatchAI(request: AIRequest): Promise<AIResponse> {
 
       console.log('[AI Dispatch] 图片分析完成，结合用户输入生成文案')
     } catch (error) {
-      console.error('[AI Dispatch] 图片分析失败，继续使用原始输入:', error)
-      // 分析失败时继续使用原始消息
+      // 详细记录错误信息
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('[AI Dispatch] 图片分析失败:', {
+        error: errorMessage,
+        skillId: request.skillId,
+        visionModel: visionModel?.model,
+        visionProvider: visionModel?.provider,
+        imageCount: request.attachments?.length,
+      })
+      // 分析失败时继续使用原始消息，但在响应中提示用户
+      userMessage = `${request.message}\n\n[系统提示：图片分析暂时不可用，已跳过图片分析步骤]`
     }
   }
 
@@ -154,24 +181,40 @@ async function analyzeImagesWithVision(
 
 请用简洁的中文回答，为后续生成朋友圈文案提供参考。`
 
-  console.log(`[Vision] 开始分析 ${images.length} 张图片，使用模型: ${model}`)
+  console.log(`[Vision] 开始分析 ${images.length} 张图片，使用模型: ${model}, provider: ${provider}`)
+  console.log(`[Vision] 图片详情:`, images.map((img, i) => ({
+    index: i,
+    hasUrl: !!img.url,
+    urlPrefix: img.url?.substring(0, 80),
+    hasBase64: !!img.base64,
+    base64Prefix: img.base64?.substring(0, 50),
+  })))
 
-  if (provider === 'siliconflow') {
-    return await callSiliconFlowVision(
-      model,
-      analysisPrompt,
-      images,
-      temperature,
-      maxTokens
-    )
-  } else {
-    return await callVisionModel(
-      model,
-      analysisPrompt,
-      images,
-      temperature,
-      maxTokens
-    )
+  try {
+    let result: string
+    if (provider === 'siliconflow') {
+      result = await callSiliconFlowVision(
+        model,
+        analysisPrompt,
+        images,
+        temperature,
+        maxTokens
+      )
+    } else {
+      result = await callVisionModel(
+        model,
+        analysisPrompt,
+        images,
+        temperature,
+        maxTokens
+      )
+    }
+    console.log(`[Vision] 分析成功，结果长度: ${result.length}`)
+    console.log(`[Vision] 分析结果预览: ${result.substring(0, 200)}...`)
+    return result
+  } catch (error) {
+    console.error(`[Vision] 分析失败:`, error)
+    throw error
   }
 }
 

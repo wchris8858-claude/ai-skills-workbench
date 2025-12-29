@@ -5,18 +5,31 @@ import { logger } from '@/lib/logger'
 import { withErrorHandler } from '@/lib/middleware/error-handler'
 import { createError } from '@/lib/errors'
 import { Message } from '@/types'
+import { checkRateLimit, getClientIP, rateLimitExceededResponse } from '@/lib/middleware/rateLimit'
+
+// Next.js App Router 配置：最大请求持续时间
+export const maxDuration = 60
 
 type Attachment = NonNullable<Message['attachments']>[number]
 
 async function handler(req: NextRequest) {
+  // 速率限制检查
+  const clientIP = getClientIP(req)
+  const rateLimitResult = checkRateLimit(clientIP, 'api/claude/chat')
+  if (!rateLimitResult.allowed) {
+    return rateLimitExceededResponse(rateLimitResult)
+  }
+
   let skillId: string = ''
   let message: string = ''
   let attachments: Attachment[] = []
+  let modelOverride: string | undefined
 
   try {
     const body = await req.json()
     skillId = body.skillId
     message = body.message
+    modelOverride = body.model // 支持前端指定模型覆盖默认配置
     // 支持 images 和 attachments 两个字段名
     attachments = body.attachments || body.images || []
 
@@ -32,13 +45,20 @@ async function handler(req: NextRequest) {
 
     // 调试：打印 attachments 详情
     if (attachments.length > 0) {
-      console.log('[Chat API] Attachments received:', attachments.map(att => ({
-        type: att.type,
-        hasUrl: !!att.url,
-        hasBase64: !!att.base64,
-        urlPrefix: att.url?.substring(0, 50),
-        base64Prefix: att.base64?.substring(0, 50),
-      })))
+      console.log('[Chat API] Attachments received:', {
+        count: attachments.length,
+        details: attachments.map((att, i) => ({
+          index: i,
+          type: att.type,
+          hasUrl: !!att.url,
+          hasBase64: !!att.base64,
+          base64Length: att.base64?.length || 0,
+          urlPrefix: att.url?.substring(0, 50),
+          base64Prefix: att.base64?.substring(0, 30),
+        }))
+      })
+    } else {
+      console.log('[Chat API] No attachments received')
     }
 
     if (!skillId || !message) {
@@ -49,11 +69,13 @@ async function handler(req: NextRequest) {
     const systemPrompt = getSkillSystemPrompt(skillId)
 
     // Dispatch to appropriate AI model based on skill configuration
+    // 支持前端通过 model 参数覆盖默认模型
     const response = await dispatchAI({
       skillId,
       message,
       systemPrompt,
       attachments,
+      modelOverride,
     })
 
     return NextResponse.json({

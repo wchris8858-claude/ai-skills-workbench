@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { PRESET_SKILLS } from '@/types'
+import { PRESET_SKILLS } from '@/lib/skills/config'
 import { Loader2, Play, Copy, Check } from 'lucide-react'
 
 interface TestResult {

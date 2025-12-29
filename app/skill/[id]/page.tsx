@@ -5,11 +5,12 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { ConversationView } from '@/components/ConversationView'
-import { PRESET_SKILLS } from '@/types'
+import { PRESET_SKILLS } from '@/lib/skills/config'
 import { useAuth } from '@/contexts/AuthContext'
 import { getSkillById } from '@/lib/db/skills'
 import { cn } from '@/lib/utils'
 import { getIcon } from '@/lib/icons'
+import { getSkillModelConfig } from '@/lib/models/config'
 
 export default function SkillPage() {
   const params = useParams()
@@ -157,7 +158,7 @@ export default function SkillPage() {
         skillName={skill.name}
         placeholder={skill.placeholder}
         inputTypes={skill.inputTypes || ['text']}
-        modelInfo={skill.model?.primary || 'claude-haiku-4-5-20251001'}
+        modelInfo={getSkillModelConfig(skill.id).text.model}
         initialConversationId={conversationId}
       />
     </div>

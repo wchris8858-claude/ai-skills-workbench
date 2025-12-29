@@ -7,6 +7,7 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 import { DbConversation } from './index'
 import { Conversation } from '@/types'
 import { logger } from '@/lib/logger'
+import { PRESET_SKILL_NAMES, PRESET_SKILL_ICONS } from '@/lib/skills/config'
 
 // 获取 Supabase 客户端（使用 Service Role Key）
 const getDb = () => getSupabaseAdmin()
@@ -263,10 +264,15 @@ export async function getRecentConversationsWithSkills(
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       )[0]
 
+      // 优先使用预设技能配置，回退到数据库中的自定义技能
+      const skillId = item.skill_id
+      const skillName = PRESET_SKILL_NAMES[skillId] || item.skills?.name || '未知技能'
+      const skillIcon = PRESET_SKILL_ICONS[skillId] || item.skills?.icon || 'MessageCircle'
+
       return {
         conversation: dbConversationToConversation(item),
-        skillName: item.skills?.name || '未知技能',
-        skillIcon: item.skills?.icon || 'MessageCircle',
+        skillName,
+        skillIcon,
         lastMessagePreview: lastMessage?.content?.slice(0, 50) || null,
       }
     })
