@@ -692,11 +692,14 @@ export function ConversationView({
 
           {/* 已上传的图片预览 */}
           {uploadedImages.length > 0 && (
-            <div className="flex gap-2 flex-wrap mb-3 p-3 bg-secondary/30 rounded-lg">
+            <div className="flex gap-2 flex-wrap mb-3 p-3 bg-accent/10 border border-accent/30 rounded-lg">
+              <div className="w-full text-xs text-accent mb-2">
+                已上传 {uploadedImages.length} 张图片，发送消息时将一起发送
+              </div>
               {uploadedImages.map((img) => (
                 <div
                   key={img.url}
-                  className="relative group rounded-lg overflow-hidden border border-border/50 bg-background"
+                  className="relative group rounded-lg overflow-hidden border-2 border-accent/50 bg-background"
                 >
                   <img
                     src={img.url}
