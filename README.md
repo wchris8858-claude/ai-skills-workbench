@@ -133,7 +133,7 @@ case 'your-skill-id':
   return `你的技能指令...`
 ```
 
-2. 在 `types/index.ts` 的 `PRESET_SKILLS` 添加元数据:
+2. 在 `lib/skills/config.ts` 的 `PRESET_SKILL_CONFIGS` 添加元数据:
 
 ```typescript
 {
@@ -144,6 +144,15 @@ case 'your-skill-id':
   category: '分类',
   inputTypes: ['text', 'voice', 'image'],
   source: 'official'
+}
+```
+
+3. 在 `lib/models/config.ts` 配置模型映射:
+
+```typescript
+'your-skill-id': {
+  text: { model: 'claude-opus-4-5-20251101', temperature: 0.7 },
+  vision: { model: 'qwen3-vl-a3b', temperature: 0.5 }
 }
 ```
 
