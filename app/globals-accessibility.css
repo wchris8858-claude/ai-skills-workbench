@@ -1,0 +1,280 @@
+/**
+ * Accessibility Styles
+ *
+ * Global styles for accessibility features
+ */
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Screen Reader Only - Focusable */
+.sr-only.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Focus Visible Styles */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  :root.high-contrast {
+    --contrast-boost: 1.2;
+  }
+
+  .high-contrast button,
+  .high-contrast a {
+    border: 2px solid currentColor;
+  }
+
+  .high-contrast input,
+  .high-contrast select,
+  .high-contrast textarea {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.reduce-motion * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Font Size Preferences */
+:root.text-normal {
+  font-size: 16px;
+}
+
+:root.text-large {
+  font-size: 18px;
+}
+
+:root.text-x-large {
+  font-size: 20px;
+}
+
+/* Keyboard Navigation Focus */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="link"]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px hsl(var(--ring) / 0.1);
+}
+
+/* Skip Link */
+#skip-to-main {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  text-decoration: none;
+  border-radius: 0.25rem;
+  transition: top 0.2s ease;
+}
+
+#skip-to-main:focus {
+  top: 1rem;
+  left: 1rem;
+}
+
+/* ARIA Live Regions */
+[aria-live] {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+[aria-live="assertive"] {
+  /* Assertive announcements are handled by screen readers */
+}
+
+[aria-live="polite"] {
+  /* Polite announcements are handled by screen readers */
+}
+
+/* Loading States */
+[aria-busy="true"] {
+  cursor: wait;
+}
+
+/* Disabled States */
+[disabled],
+[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Required Fields */
+[aria-required="true"]::after,
+[required]::after {
+  content: " *";
+  color: hsl(var(--destructive));
+}
+
+/* Invalid Fields */
+[aria-invalid="true"],
+input:invalid {
+  border-color: hsl(var(--destructive));
+}
+
+/* Tooltip/Popover positioning */
+[role="tooltip"],
+[role="dialog"],
+[role="alertdialog"] {
+  z-index: 50;
+}
+
+/* Modal backdrop */
+[aria-modal="true"] + [aria-hidden="true"] {
+  pointer-events: none;
+}
+
+/* Focus trap container */
+[data-focus-trap] {
+  position: relative;
+}
+
+/* Visible focus for keyboard users only */
+.js-focus-visible :focus:not(.focus-visible) {
+  outline: none;
+}
+
+/* High contrast borders for better visibility */
+@media (prefers-contrast: high) {
+  button,
+  input,
+  select,
+  textarea,
+  a {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Ensure minimum touch target size (44x44px for WCAG AAA) */
+button,
+a,
+[role="button"],
+[role="link"] {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 1rem;
+}
+
+/* Exception for icon-only buttons with proper labels */
+button[aria-label],
+a[aria-label] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Color contrast helpers */
+.text-accessible-light {
+  color: hsl(0 0% 0%); /* Black text on light background */
+}
+
+.text-accessible-dark {
+  color: hsl(0 0% 100%); /* White text on dark background */
+}
+
+/* Improve link visibility */
+a:not([class]) {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+a:not([class]):hover,
+a:not([class]):focus {
+  text-decoration-thickness: 2px;
+}
+
+/* Table accessibility */
+table caption {
+  font-weight: 600;
+  text-align: left;
+  padding: 0.5rem 0;
+}
+
+/* Form fieldset */
+fieldset {
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+legend {
+  font-weight: 600;
+  padding: 0 0.5rem;
+}
+
+/* Error messages */
+[role="alert"] {
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  border-radius: 0.375rem;
+  border: 1px solid hsl(var(--destructive));
+  background: hsl(var(--destructive) / 0.1);
+  color: hsl(var(--destructive-foreground));
+}
+
+/* Success messages */
+[role="status"][aria-live="polite"] {
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  border-radius: 0.375rem;
+  border: 1px solid hsl(142 76% 36%);
+  background: hsl(142 76% 36% / 0.1);
+  color: hsl(142 76% 36%);
+}
+
+/* Keyboard shortcuts display */
+kbd {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  font-family: ui-monospace, monospace;
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}

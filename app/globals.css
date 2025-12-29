@@ -1,0 +1,893 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 「墨韵东方」配色方案 - Light Mode */
+    --background: 40 30% 98%;              /* 宣纸白 #FAFAF7 */
+    --foreground: 220 15% 15%;             /* 墨黑 #232830 */
+
+    --card: 0 0% 100%;                     /* 纯白卡片 */
+    --card-foreground: 220 15% 15%;        /* 墨黑 */
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 15%;
+
+    --primary: 350 72% 50%;                /* 朱砂红 #D13A52 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 40 25% 94%;               /* 淡墨色背景 #F5F3EE */
+    --secondary-foreground: 220 15% 15%;
+
+    --muted: 40 15% 92%;                   /* 宣纸灰 #EFECE8 */
+    --muted-foreground: 220 10% 45%;       /* 淡墨文字 */
+
+    --accent: 160 45% 40%;                 /* 竹青绿 #3D9970 */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 160 60% 40%;                /* 青翠绿 */
+    --success-foreground: 0 0% 100%;
+
+    --warning: 35 90% 55%;                 /* 琥珀橙 */
+    --warning-foreground: 220 15% 15%;
+
+    --border: 30 20% 88%;                  /* 淡墨边框 */
+    --input: 30 20% 88%;
+    --ring: 350 72% 55%;                   /* 朱红焦点 */
+
+    --radius: 0.5rem;
+
+    /* 特殊颜色变量 */
+    --ink-black: 220 15% 12%;              /* 浓墨 */
+    --ink-light: 220 10% 35%;              /* 淡墨 */
+    --paper-warm: 40 30% 96%;              /* 暖宣纸 */
+    --vermillion: 350 72% 50%;             /* 朱砂 */
+    --bamboo: 160 45% 40%;                 /* 竹青 */
+    --gold: 42 90% 55%;                    /* 金色 */
+  }
+
+  .dark {
+    /* 「墨韵东方」配色方案 - Dark Mode */
+    --background: 220 15% 8%;              /* 浓墨背景 #121518 */
+    --foreground: 40 20% 92%;              /* 宣纸白文字 #EFEBE3 */
+
+    --card: 220 15% 12%;                   /* 淡墨卡片 #1C1F24 */
+    --card-foreground: 40 20% 92%;
+
+    --popover: 220 15% 12%;
+    --popover-foreground: 40 20% 92%;
+
+    --primary: 350 65% 60%;                /* 淡朱红 #E05A6F */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 16%;              /* 深墨背景 #262A30 */
+    --secondary-foreground: 40 20% 92%;
+
+    --muted: 220 15% 18%;                  /* 墨灰 #2A2E35 */
+    --muted-foreground: 40 15% 60%;        /* 淡墨文字 */
+
+    --accent: 160 50% 50%;                 /* 亮竹青 */
+    --accent-foreground: 220 15% 8%;
+
+    --destructive: 0 60% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 160 55% 50%;
+    --success-foreground: 220 15% 8%;
+
+    --warning: 35 85% 60%;
+    --warning-foreground: 220 15% 8%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 350 65% 60%;
+
+    --ink-black: 220 15% 6%;
+    --ink-light: 40 15% 55%;
+    --paper-warm: 40 15% 90%;
+    --vermillion: 350 65% 60%;
+    --bamboo: 160 50% 50%;
+    --gold: 42 85% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 标题使用宋体 */
+  h1, h2, h3, .font-heading {
+    font-family: 'Noto Serif SC', Georgia, 'Times New Roman', serif;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* 选中文字样式 */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer components {
+  /* ==================== 墨韵卡片系统 ==================== */
+
+  /* 基础卡片 - 宣纸质感 */
+  .ink-card {
+    @apply relative overflow-hidden rounded-lg border border-border/60 bg-card;
+    box-shadow:
+      0 1px 3px 0 rgb(0 0 0 / 0.04),
+      0 1px 2px -1px rgb(0 0 0 / 0.04);
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .ink-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      hsl(var(--primary) / 0.6) 20%,
+      hsl(var(--primary)) 50%,
+      hsl(var(--primary) / 0.6) 80%,
+      transparent 100%
+    );
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .ink-card:hover {
+    border-color: hsl(var(--primary) / 0.3);
+    box-shadow:
+      0 10px 40px -10px hsl(var(--primary) / 0.15),
+      0 4px 12px -2px rgb(0 0 0 / 0.08);
+    transform: translateY(-4px);
+  }
+
+  .ink-card:hover::before {
+    opacity: 1;
+  }
+
+  /* 技能卡片 - 带水墨晕染效果 */
+  .skill-card {
+    @apply relative overflow-hidden rounded-xl bg-card p-6;
+    border: 1px solid hsl(var(--border) / 0.6);
+    transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .skill-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+      circle at center,
+      hsl(var(--primary) / 0.08) 0%,
+      transparent 40%
+    );
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
+  .skill-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    background: linear-gradient(
+      to top,
+      hsl(var(--card)) 0%,
+      transparent 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .skill-card:hover {
+    border-color: hsl(var(--primary) / 0.4);
+    box-shadow:
+      0 20px 60px -15px hsl(var(--primary) / 0.2),
+      0 8px 24px -8px rgb(0 0 0 / 0.1);
+    transform: translateY(-6px) scale(1.01);
+  }
+
+  .skill-card:hover::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* 玻璃形态卡片 */
+  .glass-card {
+    @apply relative overflow-hidden rounded-2xl;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--card) / 0.9) 0%,
+      hsl(var(--card) / 0.7) 100%
+    );
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.4);
+    box-shadow: 0 8px 32px -8px rgb(0 0 0 / 0.1);
+  }
+
+  /* ==================== 墨韵按钮系统 ==================== */
+
+  .ink-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3
+           text-sm font-medium transition-all duration-300
+           focus-visible:outline-none focus-visible:ring-2
+           focus-visible:ring-ring focus-visible:ring-offset-2
+           disabled:pointer-events-none disabled:opacity-50;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .ink-button-primary {
+    @apply bg-primary text-primary-foreground;
+    box-shadow:
+      0 4px 14px -3px hsl(var(--primary) / 0.4),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.1);
+  }
+
+  .ink-button-primary:hover {
+    @apply bg-primary/90;
+    box-shadow:
+      0 6px 20px -4px hsl(var(--primary) / 0.5),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.15);
+    transform: translateY(-2px);
+  }
+
+  .ink-button-primary:active {
+    transform: translateY(0);
+    box-shadow:
+      0 2px 8px -2px hsl(var(--primary) / 0.4),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.1);
+  }
+
+  .ink-button-secondary {
+    @apply border border-border bg-card text-foreground;
+  }
+
+  .ink-button-secondary:hover {
+    @apply bg-secondary border-primary/30;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -4px rgb(0 0 0 / 0.1);
+  }
+
+  .ink-button-ghost {
+    @apply text-foreground hover:bg-secondary/80;
+  }
+
+  /* 印章风格按钮 */
+  .stamp-button {
+    @apply relative inline-flex items-center justify-center px-8 py-3
+           font-semibold tracking-wider;
+    font-family: 'Noto Serif SC', serif;
+    color: hsl(var(--primary));
+    border: 2px solid hsl(var(--primary));
+    background: transparent;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .stamp-button::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border: 1px solid hsl(var(--primary) / 0.3);
+    pointer-events: none;
+  }
+
+  .stamp-button:hover {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.3);
+  }
+
+  /* ==================== 墨韵搜索框 ==================== */
+
+  .ink-search {
+    @apply flex items-center gap-3 rounded-xl border border-border/60
+           bg-card/80 backdrop-blur-sm px-5 py-4 transition-all duration-300;
+  }
+
+  .ink-search:focus-within {
+    @apply border-primary/50 bg-card;
+    box-shadow:
+      0 0 0 3px hsl(var(--primary) / 0.1),
+      0 4px 20px -4px hsl(var(--primary) / 0.15);
+  }
+
+  .ink-search input {
+    @apply flex-1 bg-transparent text-foreground placeholder:text-muted-foreground
+           focus:outline-none text-base;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  /* ==================== 墨韵标签系统 ==================== */
+
+  .ink-tag {
+    @apply inline-flex items-center justify-center rounded-full px-4 py-2
+           text-sm font-medium transition-all duration-300 cursor-pointer;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .ink-tag-active {
+    @apply bg-primary text-primary-foreground;
+    box-shadow: 0 4px 14px -3px hsl(var(--primary) / 0.4);
+  }
+
+  .ink-tag-inactive {
+    @apply bg-secondary text-foreground/80 hover:bg-secondary/80
+           hover:text-foreground border border-transparent;
+  }
+
+  .ink-tag-inactive:hover {
+    border-color: hsl(var(--border));
+  }
+
+  /* 分类标签 - 带笔触效果 */
+  .brush-tag {
+    @apply relative inline-flex items-center px-4 py-1.5 text-sm font-medium;
+    color: hsl(var(--muted-foreground));
+    transition: color 0.3s ease;
+  }
+
+  .brush-tag::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+      transparent,
+      hsl(var(--primary)),
+      transparent
+    );
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .brush-tag:hover,
+  .brush-tag.active {
+    color: hsl(var(--primary));
+  }
+
+  .brush-tag:hover::after,
+  .brush-tag.active::after {
+    width: 100%;
+  }
+
+  /* ==================== Hero 区域 - 水墨背景 ==================== */
+
+  .ink-hero {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ink-hero::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    right: -10%;
+    width: 60%;
+    height: 80%;
+    background: radial-gradient(
+      ellipse at center,
+      hsl(var(--primary) / 0.08) 0%,
+      transparent 70%
+    );
+    filter: blur(60px);
+    animation: ink-float 8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .ink-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -10%;
+    left: -5%;
+    width: 40%;
+    height: 60%;
+    background: radial-gradient(
+      ellipse at center,
+      hsl(var(--accent) / 0.06) 0%,
+      transparent 70%
+    );
+    filter: blur(50px);
+    animation: ink-float 10s ease-in-out infinite reverse;
+    pointer-events: none;
+  }
+
+  @keyframes ink-float {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.6;
+    }
+    50% {
+      transform: translate(20px, -20px) scale(1.1);
+      opacity: 0.8;
+    }
+  }
+
+  /* 水墨晕染装饰 */
+  .ink-splash {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 30% 30%,
+      hsl(var(--primary) / 0.12) 0%,
+      hsl(var(--primary) / 0.06) 40%,
+      transparent 70%
+    );
+    filter: blur(40px);
+    pointer-events: none;
+  }
+
+  /* ==================== 装饰元素 ==================== */
+
+  /* 印章装饰 */
+  .seal-decoration {
+    @apply inline-flex items-center justify-center;
+    width: 48px;
+    height: 48px;
+    border: 2px solid hsl(var(--primary));
+    color: hsl(var(--primary));
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    transform: rotate(-5deg);
+  }
+
+  /* 竖排文字 */
+  .vertical-text {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    letter-spacing: 0.2em;
+  }
+
+  /* 分隔线 - 墨痕 */
+  .ink-divider {
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      hsl(var(--border)) 20%,
+      hsl(var(--border)) 80%,
+      transparent 100%
+    );
+  }
+
+  /* 点睛装饰 */
+  .dot-accent {
+    @apply inline-block w-2 h-2 rounded-full bg-primary;
+    box-shadow: 0 0 8px hsl(var(--primary) / 0.5);
+  }
+
+  /* ==================== 消息气泡 ==================== */
+
+  .message-bubble {
+    @apply rounded-2xl px-5 py-3 max-w-[85%] break-words;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .message-bubble-user {
+    @apply bg-primary text-primary-foreground ml-auto;
+    box-shadow:
+      0 4px 14px -3px hsl(var(--primary) / 0.3),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.1);
+    border-bottom-right-radius: 6px;
+  }
+
+  .message-bubble-assistant {
+    @apply bg-card text-card-foreground mr-auto border border-border/60;
+    box-shadow: 0 2px 8px -2px rgb(0 0 0 / 0.06);
+    border-bottom-left-radius: 6px;
+  }
+
+  /* ==================== 输入区域 ==================== */
+
+  .ink-input {
+    @apply w-full rounded-xl border border-border/60 bg-card/80 px-5 py-4
+           text-foreground placeholder:text-muted-foreground
+           focus:outline-none focus:border-primary/50
+           transition-all duration-300;
+    font-family: 'Noto Sans SC', sans-serif;
+    backdrop-filter: blur(8px);
+  }
+
+  .ink-input:focus {
+    box-shadow:
+      0 0 0 3px hsl(var(--primary) / 0.1),
+      0 4px 20px -4px hsl(var(--primary) / 0.1);
+  }
+
+  /* ==================== 特色组件 ==================== */
+
+  /* 特性卡片 */
+  .feature-card {
+    @apply relative overflow-hidden rounded-2xl p-8 transition-all duration-500;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--secondary) / 0.5) 100%
+    );
+    border: 1px solid hsl(var(--border) / 0.6);
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary) / 0.05) 0%,
+      transparent 50%
+    );
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+
+  .feature-card:hover {
+    border-color: hsl(var(--primary) / 0.3);
+    box-shadow: 0 20px 50px -15px hsl(var(--primary) / 0.15);
+    transform: translateY(-4px);
+  }
+
+  .feature-card:hover::before {
+    opacity: 1;
+  }
+
+  /* 图标容器 */
+  .icon-container {
+    @apply flex items-center justify-center rounded-xl transition-all duration-300;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary) / 0.1) 0%,
+      hsl(var(--primary) / 0.05) 100%
+    );
+  }
+
+  .icon-container-accent {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--accent) / 0.1) 0%,
+      hsl(var(--accent) / 0.05) 100%
+    );
+  }
+
+  /* ==================== 统计数字动画 ==================== */
+
+  .stat-number {
+    @apply text-4xl font-bold;
+    font-family: 'Noto Serif SC', serif;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--accent)) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ==================== 导航样式 ==================== */
+
+  .nav-link {
+    @apply relative px-4 py-2 text-sm font-medium text-muted-foreground
+           transition-colors duration-300;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    @apply text-foreground;
+  }
+
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: hsl(var(--primary));
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .nav-link:hover::after,
+  .nav-link.active::after {
+    width: 60%;
+  }
+
+  /* ==================== 滚动条样式 ==================== */
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+    transition: background 0.2s ease;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.5);
+  }
+
+  /* ==================== 兼容旧样式 ==================== */
+
+  /* 保持与现有代码的兼容性 */
+  .valley-card { @apply ink-card; }
+  .valley-card-glow { @apply skill-card; }
+  .valley-search { @apply ink-search; }
+  .valley-tag { @apply ink-tag; }
+  .valley-tag-active { @apply ink-tag-active; }
+  .valley-tag-inactive { @apply ink-tag-inactive; }
+  .valley-button { @apply ink-button; }
+  .valley-button-primary { @apply ink-button-primary; }
+  .valley-button-secondary { @apply ink-button-secondary; }
+  .valley-hero-gradient { @apply ink-hero; }
+  .apple-input { @apply ink-input; }
+}
+
+@layer utilities {
+  /* 减少动画 - 无障碍 */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* 文本截断 */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* 文字渐变 - 朱砂到竹青 */
+  .text-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--accent)) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* 发光效果 */
+  .glow-primary {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.3);
+  }
+
+  .glow-primary-sm {
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.2);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 30px hsl(var(--accent) / 0.3);
+  }
+
+  /* ==================== 动画系统 ==================== */
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes brushStroke {
+    from {
+      stroke-dashoffset: 1000;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes inkSpread {
+    from {
+      transform: scale(0);
+      opacity: 0.8;
+    }
+    to {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  @keyframes gentlePulse {
+    0%, 100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.02);
+    }
+  }
+
+  @keyframes floatGently {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(1deg);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .animate-fade-in-down {
+    animation: fadeInDown 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .animate-gentle-pulse {
+    animation: gentlePulse 3s ease-in-out infinite;
+  }
+
+  .animate-float {
+    animation: floatGently 4s ease-in-out infinite;
+  }
+
+  /* 延迟动画类 */
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+
+  /* 填充模式 */
+  .fill-forwards {
+    animation-fill-mode: forwards;
+  }
+
+  /* ==================== 触摸设备优化 ==================== */
+
+  @media (hover: none) {
+    .skill-card:hover,
+    .ink-card:hover,
+    .feature-card:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .skill-card:active,
+    .ink-card:active,
+    .feature-card:active {
+      transform: scale(0.98);
+    }
+  }
+
+  /* ==================== 背景装饰 ==================== */
+
+  .bg-ink-texture {
+    background-image:
+      radial-gradient(circle at 20% 80%, hsl(var(--primary) / 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(var(--accent) / 0.03) 0%, transparent 50%);
+  }
+
+  .bg-paper-texture {
+    background-color: hsl(var(--background));
+    background-image:
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+
+  .bg-radial-fade {
+    background: radial-gradient(
+      ellipse at center,
+      hsl(var(--secondary) / 0.8) 0%,
+      transparent 70%
+    );
+  }
+}
