@@ -138,12 +138,10 @@ export function ConversationView({
 
   // 处理图片上传
   const handleImageUpload = async (file: File) => {
-    console.log('Starting image upload:', file.name, file.size, file.type)
     setIsUploading(true)
     try {
       // 先获取 base64（用于 Vision API）
       const base64Data = await fileToBase64(file)
-      console.log('Base64 generated, length:', base64Data.length)
 
       const formData = new FormData()
       formData.append('file', file)
@@ -153,9 +151,7 @@ export function ConversationView({
         body: formData,
       })
 
-      console.log('Upload response status:', response.status)
       const data = await response.json()
-      console.log('Upload response data:', data)
 
       if (data.success) {
         // 同时保存 URL 和 base64
@@ -164,23 +160,12 @@ export function ConversationView({
           name: file.name,
           base64: base64Data  // 保存完整的 data URL
         }
-        console.log('Adding image to state with base64:', {
-          url: newImage.url.substring(0, 50),
-          base64Length: newImage.base64.length
-        })
-        setUploadedImages(prev => {
-          console.log('Previous images:', prev.length)
-          const updated = [...prev, newImage]
-          console.log('Updated images:', updated.length)
-          return updated
-        })
+        setUploadedImages(prev => [...prev, newImage])
       } else {
         const errorMsg = data.error?.message || (typeof data.error === 'string' ? data.error : '未知错误')
-        console.error('Upload failed:', errorMsg)
         alert('图片上传失败: ' + errorMsg)
       }
-    } catch (error) {
-      console.error('Upload error:', error)
+    } catch {
       alert('图片上传失败: 网络错误或服务不可用')
     } finally {
       setIsUploading(false)
@@ -383,24 +368,9 @@ export function ConversationView({
       // 验证图片数据完整性
       const validImages = currentImages.filter(img => {
         if (!img.base64) {
-          console.warn('[ConversationView] 跳过无效图片（缺少 base64）:', img.url?.substring(0, 50))
           return false
         }
         return true
-      })
-
-      // 调试：打印发送的图片信息
-      console.log('[ConversationView] Sending request with images:', {
-        skillId,
-        messageLength: currentInput.length,
-        totalImages: currentImages.length,
-        validImages: validImages.length,
-        imageDetails: validImages.map(img => ({
-          urlPrefix: img.url.substring(0, 80),
-          hasBase64: !!img.base64,
-          base64Length: img.base64?.length || 0,
-          base64Prefix: img.base64?.substring(0, 30),
-        }))
       })
 
       // 准备 attachments 数据，包含 base64 用于 Vision API
@@ -525,11 +495,6 @@ export function ConversationView({
         url: att.url,
         base64: att.base64,
       })) || []
-
-      console.log('[Regenerate] Using original attachments:', {
-        count: attachments.length,
-        hasBase64: attachments.some(a => !!a.base64),
-      })
 
       const response = await fetch('/api/claude/chat', {
         method: 'POST',

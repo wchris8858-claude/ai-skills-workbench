@@ -8,6 +8,7 @@
 import { callTextModel, callImageModel, callVisionModel } from './unified-client'
 import { callSiliconFlowText, callSiliconFlowImage, callSiliconFlowVision } from './siliconflow-client'
 import { getSkillModelConfig, getModelConfigById, type ModelProvider, type ModelConfig } from '../models/config'
+import { logger } from '../logger'
 
 export interface AIRequest {
   skillId: string
@@ -49,9 +50,9 @@ export async function dispatchAI(request: AIRequest): Promise<AIResponse> {
     if (overrideConfig && overrideConfig.type === 'text') {
       textModel = overrideConfig
       usingOverride = true
-      console.log('[AI Dispatch] 使用前端指定的模型:', request.modelOverride)
+      logger.debug('[AI Dispatch] 使用前端指定的模型', { model: request.modelOverride })
     } else {
-      console.log('[AI Dispatch] 前端指定的模型无效或不是文本模型，使用默认配置:', request.modelOverride)
+      logger.debug('[AI Dispatch] 前端指定的模型无效或不是文本模型，使用默认配置', { model: request.modelOverride })
     }
   }
 
@@ -61,7 +62,7 @@ export async function dispatchAI(request: AIRequest): Promise<AIResponse> {
   let userMessage = request.message
 
   // 调试：打印配置信息
-  console.log('[AI Dispatch] Config:', {
+  logger.debug('[AI Dispatch] Config', {
     skillId: request.skillId,
     modelOverride: request.modelOverride,
     usingOverride,
@@ -86,12 +87,11 @@ export async function dispatchAI(request: AIRequest): Promise<AIResponse> {
       // 将图片分析结果与用户输入结合
       userMessage = `【图片内容分析】\n${imageAnalysis}\n\n【用户描述】\n${request.message}`
 
-      console.log('[AI Dispatch] 图片分析完成，结合用户输入生成文案')
+      logger.debug('[AI Dispatch] 图片分析完成，结合用户输入生成文案')
     } catch (error) {
       // 详细记录错误信息
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      console.error('[AI Dispatch] 图片分析失败:', {
-        error: errorMessage,
+      logger.error('[AI Dispatch] 图片分析失败', {
+        error: error instanceof Error ? error.message : String(error),
         skillId: request.skillId,
         visionModel: visionModel?.model,
         visionProvider: visionModel?.provider,
@@ -147,7 +147,7 @@ export async function dispatchAI(request: AIRequest): Promise<AIResponse> {
       provider,
     }
   } catch (error) {
-    console.error(`AI dispatch failed for model ${model}:`, error)
+    logger.error(`AI dispatch failed for model ${model}`, error)
     throw error
   }
 }
@@ -181,14 +181,15 @@ async function analyzeImagesWithVision(
 
 请用简洁的中文回答，为后续生成朋友圈文案提供参考。`
 
-  console.log(`[Vision] 开始分析 ${images.length} 张图片，使用模型: ${model}, provider: ${provider}`)
-  console.log(`[Vision] 图片详情:`, images.map((img, i) => ({
-    index: i,
-    hasUrl: !!img.url,
-    urlPrefix: img.url?.substring(0, 80),
-    hasBase64: !!img.base64,
-    base64Prefix: img.base64?.substring(0, 50),
-  })))
+  logger.debug(`[Vision] 开始分析 ${images.length} 张图片`, {
+    model,
+    provider,
+    images: images.map((img, i) => ({
+      index: i,
+      hasUrl: !!img.url,
+      hasBase64: !!img.base64,
+    }))
+  })
 
   try {
     let result: string
@@ -209,11 +210,10 @@ async function analyzeImagesWithVision(
         maxTokens
       )
     }
-    console.log(`[Vision] 分析成功，结果长度: ${result.length}`)
-    console.log(`[Vision] 分析结果预览: ${result.substring(0, 200)}...`)
+    logger.debug(`[Vision] 分析成功`, { resultLength: result.length })
     return result
   } catch (error) {
-    console.error(`[Vision] 分析失败:`, error)
+    logger.error('[Vision] 分析失败', error)
     throw error
   }
 }
@@ -243,7 +243,7 @@ export async function generateImage(
       return await callImageModel(imageModel.model, prompt)
     }
   } catch (error) {
-    console.error(`Image generation failed for model ${imageModel.model}:`, error)
+    logger.error(`Image generation failed for model ${imageModel.model}`, error)
     throw error
   }
 }

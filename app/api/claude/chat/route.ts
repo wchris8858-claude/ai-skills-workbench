@@ -45,7 +45,7 @@ async function handler(req: NextRequest) {
 
     // 调试：打印 attachments 详情
     if (attachments.length > 0) {
-      console.log('[Chat API] Attachments received:', {
+      logger.debug('[Chat API] Attachments received', {
         count: attachments.length,
         details: attachments.map((att, i) => ({
           index: i,
@@ -53,12 +53,8 @@ async function handler(req: NextRequest) {
           hasUrl: !!att.url,
           hasBase64: !!att.base64,
           base64Length: att.base64?.length || 0,
-          urlPrefix: att.url?.substring(0, 50),
-          base64Prefix: att.base64?.substring(0, 30),
         }))
       })
-    } else {
-      console.log('[Chat API] No attachments received')
     }
 
     if (!skillId || !message) {

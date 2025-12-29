@@ -16,10 +16,8 @@ import {
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { withErrorHandler } from '@/lib/middleware/error-handler'
 import { createError } from '@/lib/errors'
+import { getCurrentUser } from '@/lib/auth'
 import { z } from 'zod'
-
-// 临时用户ID（后续接入真实认证）
-const TEMP_USER_ID = 'temp-user-001'
 
 // 收藏操作验证 schema
 const FavoriteActionSchema = z.object({
@@ -34,6 +32,13 @@ async function getHandler(request: NextRequest) {
     throw createError.serviceUnavailable('Supabase 未配置')
   }
 
+  // 获取当前登录用户
+  const currentUser = await getCurrentUser()
+  if (!currentUser) {
+    throw createError.unauthorized('请先登录')
+  }
+  const userId = currentUser.userId
+
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type') || 'all'
 
@@ -43,11 +48,11 @@ async function getHandler(request: NextRequest) {
   } = {}
 
   if (type === 'all' || type === 'messages') {
-    result.messages = await getFavoriteMessages(TEMP_USER_ID)
+    result.messages = await getFavoriteMessages(userId)
   }
 
   if (type === 'all' || type === 'conversations') {
-    result.conversations = await getFavoriteConversations(TEMP_USER_ID)
+    result.conversations = await getFavoriteConversations(userId)
   }
 
   return NextResponse.json(result)
@@ -57,6 +62,13 @@ async function postHandler(request: NextRequest) {
   if (!isSupabaseConfigured) {
     throw createError.serviceUnavailable('Supabase 未配置')
   }
+
+  // 获取当前登录用户
+  const currentUser = await getCurrentUser()
+  if (!currentUser) {
+    throw createError.unauthorized('请先登录')
+  }
+  const userId = currentUser.userId
 
   const body = await request.json()
 
@@ -70,9 +82,9 @@ async function postHandler(request: NextRequest) {
 
   let favoriteResult
   if (type === 'message') {
-    favoriteResult = await toggleMessageFavorite(TEMP_USER_ID, id)
+    favoriteResult = await toggleMessageFavorite(userId, id)
   } else {
-    favoriteResult = await toggleConversationFavorite(TEMP_USER_ID, id)
+    favoriteResult = await toggleConversationFavorite(userId, id)
   }
 
   return NextResponse.json(favoriteResult)
@@ -83,7 +95,13 @@ async function deleteHandler() {
     throw createError.serviceUnavailable('Supabase 未配置')
   }
 
-  const success = await clearAllFavorites(TEMP_USER_ID)
+  // 获取当前登录用户
+  const currentUser = await getCurrentUser()
+  if (!currentUser) {
+    throw createError.unauthorized('请先登录')
+  }
+
+  const success = await clearAllFavorites(currentUser.userId)
 
   if (!success) {
     throw createError.database('清空收藏失败')

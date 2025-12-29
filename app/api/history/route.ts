@@ -6,7 +6,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import {
-  getUserConversations,
   getRecentConversationsWithSkills,
   searchConversations,
   deleteAllUserConversations
@@ -14,14 +13,19 @@ import {
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { withErrorHandler } from '@/lib/middleware/error-handler'
 import { createError } from '@/lib/errors'
-
-// 临时用户ID（后续接入真实认证）
-const TEMP_USER_ID = 'temp-user-001'
+import { getCurrentUser } from '@/lib/auth'
 
 async function getHandler(request: NextRequest) {
   if (!isSupabaseConfigured) {
     throw createError.serviceUnavailable('Supabase 未配置')
   }
+
+  // 获取当前登录用户
+  const currentUser = await getCurrentUser()
+  if (!currentUser) {
+    throw createError.unauthorized('请先登录')
+  }
+  const userId = currentUser.userId
 
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('q')
@@ -30,13 +34,13 @@ async function getHandler(request: NextRequest) {
 
   // 如果有搜索关键词
   if (query) {
-    const conversations = await searchConversations(TEMP_USER_ID, query)
+    const conversations = await searchConversations(userId, query)
     return NextResponse.json({ conversations })
   }
 
   // 获取带技能信息的对话列表
   const conversationsWithSkills = await getRecentConversationsWithSkills(
-    TEMP_USER_ID,
+    userId,
     limit
   )
 
@@ -59,7 +63,13 @@ async function deleteHandler() {
     throw createError.serviceUnavailable('Supabase 未配置')
   }
 
-  const success = await deleteAllUserConversations(TEMP_USER_ID)
+  // 获取当前登录用户
+  const currentUser = await getCurrentUser()
+  if (!currentUser) {
+    throw createError.unauthorized('请先登录')
+  }
+
+  const success = await deleteAllUserConversations(currentUser.userId)
 
   if (!success) {
     throw createError.database('清空历史记录失败')

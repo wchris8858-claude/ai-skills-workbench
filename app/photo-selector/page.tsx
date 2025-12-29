@@ -40,7 +40,6 @@ export default function PhotoSelectorPage() {
     }
 
     // TODO: Implement export functionality
-    console.log('Exporting photos:', selected)
     alert(`准备导出 ${selected.length} 张照片`)
   }
 
