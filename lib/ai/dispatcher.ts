@@ -45,6 +45,15 @@ export async function dispatchAI(request: AIRequest): Promise<AIResponse> {
 
   let userMessage = request.message
 
+  // 调试：打印配置信息
+  console.log('[AI Dispatch] Config:', {
+    skillId: request.skillId,
+    hasAttachments: !!(request.attachments && request.attachments.length > 0),
+    attachmentsCount: request.attachments?.length || 0,
+    hasVisionModel: !!visionModel,
+    visionModelName: visionModel?.model,
+  })
+
   // 如果有图片附件且配置了视觉模型，先分析图片
   if (request.attachments && request.attachments.length > 0 && visionModel) {
     try {

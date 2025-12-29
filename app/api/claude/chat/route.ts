@@ -30,6 +30,17 @@ async function handler(req: NextRequest) {
 
     logger.api.request('POST', '/api/claude/chat', { skillId, messageLength: message.length, attachmentsCount: attachments.length })
 
+    // 调试：打印 attachments 详情
+    if (attachments.length > 0) {
+      console.log('[Chat API] Attachments received:', attachments.map(att => ({
+        type: att.type,
+        hasUrl: !!att.url,
+        hasBase64: !!att.base64,
+        urlPrefix: att.url?.substring(0, 50),
+        base64Prefix: att.base64?.substring(0, 50),
+      })))
+    }
+
     if (!skillId || !message) {
       throw createError.validation('Missing required fields: skillId and message are required')
     }

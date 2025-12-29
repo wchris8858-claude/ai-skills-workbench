@@ -291,6 +291,17 @@ export function ConversationView({
         console.error('Conversation ID is null, cannot save user message')
       }
 
+      // 调试：打印发送的图片信息
+      console.log('[ConversationView] Sending request with images:', {
+        skillId,
+        messageLength: currentInput.length,
+        imageCount: currentImages.length,
+        imageUrls: currentImages.map(img => ({
+          urlPrefix: img.url.substring(0, 80),
+          isDataUrl: img.url.startsWith('data:'),
+        }))
+      })
+
       const response = await fetch('/api/claude/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
