@@ -1,5 +1,8 @@
 'use client'
 
+// 强制动态渲染，避免静态生成超时
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -34,11 +37,14 @@ export default function LoginPage() {
     }
   }, [user, authLoading, router])
 
-  // 认证加载中或已登录时显示加载状态
-  if (authLoading || user) {
+  // 已登录用户显示重定向提示
+  if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-accent mx-auto mb-4" />
+          <p className="text-muted-foreground">正在跳转...</p>
+        </div>
       </div>
     )
   }

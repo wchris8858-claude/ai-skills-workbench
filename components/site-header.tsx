@@ -24,6 +24,7 @@ const navItems = [
   { href: '/shops', label: '我的店铺' },
   { href: '/my-skills', label: '我的技能' },
   { href: '/history', label: '历史记录' },
+  { href: '/dev-tools', label: '开发工具', adminOnly: true },
   { href: '/docs', label: '文档' },
 ]
 
@@ -58,7 +59,9 @@ export function SiteHeader() {
             </span>
           </Link>
           <nav className="flex items-center gap-1">
-            {navItems.map((item) => (
+            {navItems
+              .filter((item) => !item.adminOnly || isAdmin)
+              .map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -244,7 +247,9 @@ export function SiteHeader() {
       {isMobileMenuOpen && (
         <div id="mobile-menu" className="border-t border-border/40 md:hidden bg-background/95 backdrop-blur-xl">
           <nav className="container py-4 grid gap-1" aria-label="移动端导航">
-            {navItems.map((item) => (
+            {navItems
+              .filter((item) => !item.adminOnly || isAdmin)
+              .map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
