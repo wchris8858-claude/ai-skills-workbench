@@ -193,7 +193,7 @@ export default function HomePage() {
               <div className="inline-flex items-center gap-2 mb-8 animate-fade-in-down">
                 <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
                   <Sparkles className="h-4 w-4" />
-                  AI 能力平台
+                  实体店 AI 运营助手
                 </span>
               </div>
 
@@ -208,9 +208,9 @@ export default function HomePage() {
 
               {/* 副标题 */}
               <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-10 max-w-lg mx-auto lg:mx-0 animate-fade-in-up delay-100">
-                文案创作、内容分析、智能对话...
+                短视频脚本、小红书笔记、朋友圈文案...
                 <br className="hidden sm:block" />
-                一站式 AI 能力，为你的创意赋能
+                实体店 AI 运营助手，助你经营更轻松
               </p>
 
               {/* 按钮组 */}
@@ -263,7 +263,7 @@ export default function HomePage() {
                 <div className="absolute inset-2 rounded-xl border border-primary/40 -rotate-3" />
                 <div className="relative z-10 text-center">
                   <div className="font-heading text-3xl font-bold text-primary tracking-wider">AI</div>
-                  <div className="font-heading text-lg text-primary/80 mt-1">工具箱</div>
+                  <div className="font-heading text-lg text-primary/80 mt-1">掌柜</div>
                 </div>
               </div>
 

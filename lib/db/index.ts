@@ -8,6 +8,11 @@ export * from './conversations'
 export * from './messages'
 export * from './stats'
 export * from './favorites'
+export * from './shops'
+export * from './knowledge'
+export * from './calendar'
+export * from './training'
+export * from './analytics'
 
 // 数据库类型定义
 export interface DbSkill {

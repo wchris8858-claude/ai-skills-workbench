@@ -8,8 +8,8 @@ import { ToasterProvider } from '@/components/ui/toaster'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'AI Skills Workbench',
-  description: '一站式 AI 能力平台，提供文案创作、内容分析、海报生成等智能服务',
+  title: 'AI 掌柜',
+  description: '实体店 AI 运营助手，提供短视频脚本、小红书笔记、朋友圈文案、活动策划等智能服务',
 }
 
 export const viewport: Viewport = {

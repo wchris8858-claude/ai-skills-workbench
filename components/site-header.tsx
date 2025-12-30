@@ -21,6 +21,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 
 const navItems = [
   { href: '/', label: '技能广场' },
+  { href: '/shops', label: '我的店铺' },
   { href: '/my-skills', label: '我的技能' },
   { href: '/history', label: '历史记录' },
   { href: '/docs', label: '文档' },
@@ -53,7 +54,7 @@ export function SiteHeader() {
               <Sparkles className="h-4 w-4 text-primary relative z-10" />
             </div>
             <span className="font-heading font-semibold text-lg tracking-wide text-foreground transition-colors group-hover:text-primary">
-              AI 工具箱
+              AI 掌柜
             </span>
           </Link>
           <nav className="flex items-center gap-1">
@@ -99,7 +100,7 @@ export function SiteHeader() {
               <div className="absolute inset-0 border-2 border-primary/70 rounded rotate-3" />
               <Sparkles className="h-3.5 w-3.5 text-primary relative z-10" />
             </div>
-            <span className="font-heading font-semibold">AI 工具箱</span>
+            <span className="font-heading font-semibold">AI 掌柜</span>
           </Link>
 
           {/* Right Side Actions */}

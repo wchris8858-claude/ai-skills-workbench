@@ -28,11 +28,11 @@ export function SiteFooter() {
                 <Sparkles className="h-4 w-4 text-primary relative z-10" />
               </div>
               <span className="font-heading font-semibold text-lg tracking-wide">
-                AI 工具箱
+                AI 掌柜
               </span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              一站式 AI 能力平台，让创意如墨般流淌。文案创作、内容分析、智能对话，为你的创意赋能。
+              实体店 AI 运营助手，让创意如墨般流淌。短视频脚本、小红书笔记、朋友圈文案，助你经营更轻松。
             </p>
           </div>
 
@@ -95,10 +95,10 @@ export function SiteFooter() {
         <div className="mt-12 pt-6 border-t border-border/40">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p className="flex items-center gap-1">
-              Made with <Heart className="h-3.5 w-3.5 text-primary fill-primary" /> by AI Skills Team
+              Made with <Heart className="h-3.5 w-3.5 text-primary fill-primary" /> by AI 掌柜团队
             </p>
             <p>
-              © {new Date().getFullYear()} AI 工具箱. All rights reserved.
+              © {new Date().getFullYear()} AI 掌柜. All rights reserved.
             </p>
           </div>
         </div>

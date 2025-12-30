@@ -113,10 +113,10 @@ export interface UsageStats {
 }
 
 export const SKILL_CATEGORIES = [
-  '文案创作',
-  '内容分析',
+  '自媒体工具库',
+  '私域运营助理',
+  '品牌知识库',
   '效率工具',
-  '视觉设计',
   '我的技能'
 ] as const
 

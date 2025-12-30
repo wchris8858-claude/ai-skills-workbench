@@ -6,6 +6,7 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
+import { NextRequest } from 'next/server'
 import { UserRole } from '@/types'
 
 // JWT 密钥配置
@@ -163,4 +164,45 @@ export function hasPermission(userRole: UserRole, requiredRole: UserRole): boole
  */
 export function isAdmin(role: UserRole): boolean {
   return role === 'admin'
+}
+
+// 用户信息类型（包含完整用户信息）
+export interface AuthUser {
+  id: string
+  username: string
+  name?: string
+  email?: string
+  role: UserRole
+}
+
+/**
+ * 从请求中获取用户信息
+ * 用于 API 路由中的认证
+ */
+export async function getUserFromToken(request: NextRequest): Promise<AuthUser | null> {
+  // 尝试从 cookie 获取 token
+  const tokenFromCookie = request.cookies.get(COOKIE_NAME)?.value
+
+  // 尝试从 Authorization header 获取 token
+  const authHeader = request.headers.get('authorization')
+  const tokenFromHeader = authHeader?.startsWith('Bearer ')
+    ? authHeader.slice(7)
+    : null
+
+  const token = tokenFromCookie || tokenFromHeader
+
+  if (!token) {
+    return null
+  }
+
+  const payload = verifyToken(token)
+  if (!payload) {
+    return null
+  }
+
+  return {
+    id: payload.userId,
+    username: payload.username,
+    role: payload.role,
+  }
 }
