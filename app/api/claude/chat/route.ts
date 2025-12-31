@@ -24,6 +24,7 @@ async function handler(req: NextRequest) {
   let message: string = ''
   let attachments: Attachment[] = []
   let modelOverride: string | undefined
+  let conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = []
 
   try {
     const body = await req.json()
@@ -32,6 +33,8 @@ async function handler(req: NextRequest) {
     modelOverride = body.model // 支持前端指定模型覆盖默认配置
     // 支持 images 和 attachments 两个字段名
     attachments = body.attachments || body.images || []
+    // 支持传递对话历史用于上下文记忆
+    conversationHistory = body.history || []
 
     // 如果是图片URL数组,转换为attachments格式
     if (Array.isArray(attachments) && attachments.length > 0 && typeof attachments[0] === 'string') {
@@ -41,7 +44,12 @@ async function handler(req: NextRequest) {
       }))
     }
 
-    logger.api.request('POST', '/api/claude/chat', { skillId, messageLength: message.length, attachmentsCount: attachments.length })
+    logger.api.request('POST', '/api/claude/chat', {
+      skillId,
+      messageLength: message.length,
+      attachmentsCount: attachments.length,
+      historyLength: conversationHistory.length
+    })
 
     // 调试：打印 attachments 详情
     if (attachments.length > 0) {
@@ -66,12 +74,14 @@ async function handler(req: NextRequest) {
 
     // Dispatch to appropriate AI model based on skill configuration
     // 支持前端通过 model 参数覆盖默认模型
+    // 支持传递对话历史用于多轮对话上下文
     const response = await dispatchAI({
       skillId,
       message,
       systemPrompt,
       attachments,
       modelOverride,
+      conversationHistory,
     })
 
     return NextResponse.json({

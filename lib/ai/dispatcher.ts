@@ -34,6 +34,8 @@ export interface AIRequest {
     base64?: string
   }[]
   modelOverride?: string // 前端指定的模型，覆盖默认配置
+  // 对话历史，用于多轮对话上下文记忆
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
   // v2.0 新增字段
   feature?: string       // 功能标识，用于模型选择
   shopId?: string        // 店铺 ID，用于知识检索
@@ -135,6 +137,17 @@ export async function dispatchAI(request: AIRequest): Promise<AIResponse> {
       role: 'system',
       content: request.systemPrompt,
     })
+  }
+
+  // 添加对话历史（如果有），用于多轮对话上下文记忆
+  if (request.conversationHistory && request.conversationHistory.length > 0) {
+    logger.debug('[AI Dispatch] 添加对话历史', { historyLength: request.conversationHistory.length })
+    for (const msg of request.conversationHistory) {
+      messages.push({
+        role: msg.role,
+        content: msg.content,
+      })
+    }
   }
 
   // 添加用户消息（可能包含图片分析结果）

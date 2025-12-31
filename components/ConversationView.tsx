@@ -7,6 +7,7 @@ import {
   Image as ImageIcon,
   Loader2,
   StopCircle,
+  Plus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import ReactMarkdown from 'react-markdown'
@@ -16,7 +17,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getOrCreateConversation } from '@/lib/db/conversations'
 import { saveMessage, getConversationMessages, getMessagesBefore } from '@/lib/db/messages'
 import { recordUsage, checkRateLimit } from '@/lib/db/stats'
-import { toggleMessageFavorite, batchCheckFavorites } from '@/lib/db/favorites'
+import { batchCheckFavorites } from '@/lib/db/favorites'
 import { ModelSelector } from './ModelSelector'
 import { ModelInfoDialog } from './ModelInfoDialog'
 import { type ModelConfig } from '@/lib/models/config'
@@ -26,7 +27,7 @@ import {
   ImageUploadPreview,
   EmptyState,
 } from './conversation'
-import { compressImage, compressImageToBase64 } from '@/lib/utils/image-compression'
+import { compressImage } from '@/lib/utils/image-compression'
 
 interface ConversationViewProps {
   skillId: string
@@ -71,6 +72,7 @@ export function ConversationView({
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadingCountRef = useRef(0)  // 跟踪正在上传的图片数量
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -185,24 +187,29 @@ export function ConversationView({
     }
   }, [conversationId, loadingMoreHistory, hasMoreHistory, messages])
 
-  // 处理图片上传（带压缩）
+  // 处理图片上传（带压缩）- 优化：只压缩一次 + 修复多图上传竞态条件
   const handleImageUpload = async (file: File) => {
+    // 使用计数器正确管理多图上传状态
+    uploadingCountRef.current += 1
     setIsUploading(true)
     try {
-      // 压缩图片（最大 1920x1080，质量 0.8，最大 500KB）
-      const compressedFile = await compressImage(file, {
+      // 压缩选项
+      const compressionOptions = {
         maxWidth: 1920,
         maxHeight: 1080,
         quality: 0.8,
         maxSizeKB: 500,
-      })
+      }
 
-      // 压缩后获取 base64（用于 Vision API）
-      const base64Data = await compressImageToBase64(file, {
-        maxWidth: 1920,
-        maxHeight: 1080,
-        quality: 0.8,
-        maxSizeKB: 500,
+      // 只压缩一次，生成压缩后的文件
+      const compressedFile = await compressImage(file, compressionOptions)
+
+      // 从压缩后的文件读取 base64（避免重复压缩，大幅提升速度）
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(compressedFile)
       })
 
       const formData = new FormData()
@@ -230,7 +237,12 @@ export function ConversationView({
     } catch {
       alert('图片上传失败: 网络错误或服务不可用')
     } finally {
-      setIsUploading(false)
+      // 减少计数器，只有当所有上传都完成时才关闭 loading 状态
+      uploadingCountRef.current -= 1
+      if (uploadingCountRef.current <= 0) {
+        uploadingCountRef.current = 0  // 安全重置，防止负数
+        setIsUploading(false)
+      }
     }
   }
 
@@ -390,7 +402,12 @@ export function ConversationView({
       id: Date.now().toString(),
       role: 'user',
       content: currentInput,
-      timestamp: new Date()
+      timestamp: new Date(),
+      // 包含上传的图片附件用于显示
+      attachments: currentImages.length > 0 ? currentImages.map(img => ({
+        type: 'image' as const,
+        url: img.url,
+      })) : undefined,
     }
 
     setMessages(prev => [...prev, userMessage])
@@ -442,6 +459,14 @@ export function ConversationView({
         base64: img.base64,  // 传递 base64 用于 Vision API
       }))
 
+      // 构建对话历史，用于上下文记忆
+      // 只传递最近的消息避免过长，限制为最近 10 轮对话（20条消息）
+      const recentMessages = messages.slice(-20)
+      const history = recentMessages.map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+      }))
+
       const response = await fetch('/api/claude/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -450,6 +475,7 @@ export function ConversationView({
           message: currentInput,
           model: selectedModelId,
           attachments,  // 使用 attachments 替代 images
+          history,      // 添加对话历史用于上下文记忆
         })
       })
 
@@ -558,6 +584,14 @@ export function ConversationView({
         base64: att.base64,
       })) || []
 
+      // 构建对话历史（不包含被删除的消息和当前要重新生成的对话）
+      // 获取当前消息之前的历史，限制为最近 10 轮对话
+      const historyMessages = messages.slice(0, messageIndex - 1).slice(-20)
+      const history = historyMessages.map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+      }))
+
       const response = await fetch('/api/claude/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -566,6 +600,7 @@ export function ConversationView({
           message: userMessage.content,
           model: selectedModelId,
           attachments, // 重新生成时包含原始图片
+          history,     // 添加对话历史用于上下文记忆
         })
       })
 
@@ -631,7 +666,18 @@ export function ConversationView({
     if (!user) return
 
     try {
-      const result = await toggleMessageFavorite(user.id, messageId)
+      // 通过 API 调用收藏功能，确保服务端使用 Service Role Key
+      const response = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'message', id: messageId })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle favorite')
+      }
+
+      const result = await response.json()
       setFavorited(prev => {
         const next = new Set(prev)
         if (result.favorited) {
@@ -655,6 +701,29 @@ export function ConversationView({
     setSelectedModelConfig(config)
     setShowModelInfo(true)
   }, [])
+
+  // 新建对话
+  const handleNewConversation = useCallback(async () => {
+    if (!user || isLoading) return
+
+    // 清空当前对话状态
+    setMessages([])
+    setConversationId(null)
+    setUploadedImages([])
+    setInput('')
+    setFavorited(new Set())
+    setHasMoreHistory(false)
+
+    // 创建新对话
+    try {
+      const newConvId = await getOrCreateConversation(user.id, skillId, true) // 强制创建新对话
+      if (newConvId) {
+        setConversationId(newConvId)
+      }
+    } catch (error) {
+      console.error('Failed to create new conversation:', error)
+    }
+  }, [user, isLoading, skillId])
 
   if (loadingHistory) {
     return (
@@ -734,7 +803,23 @@ export function ConversationView({
                       </div>
                     )
                   ) : (
-                    <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                    <div className="space-y-2">
+                      {/* 显示用户上传的图片 */}
+                      {message.attachments && message.attachments.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {message.attachments.filter(att => att.type === 'image').map((att, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={att.url}
+                                alt={`上传的图片 ${index + 1}`}
+                                className="max-w-[200px] max-h-[150px] rounded-lg object-cover"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                    </div>
                   )}
 
                   {message.role === 'assistant' && (
@@ -771,7 +856,7 @@ export function ConversationView({
       {/* Input Area */}
       <div className="border-t border-border/40 px-4 py-4 bg-background/80 backdrop-blur-xl">
         <div className="max-w-3xl mx-auto space-y-3">
-          {/* 模型选择器 - 在对话中也显示 */}
+          {/* 模型选择器和新建对话按钮 - 在对话中显示 */}
           {messages.length > 0 && (
             <div className="flex items-center justify-between">
               <ModelSelector
@@ -779,6 +864,15 @@ export function ConversationView({
                 onModelChange={handleModelChange}
                 onShowModelInfo={handleShowModelInfo}
               />
+              <button
+                onClick={handleNewConversation}
+                disabled={isLoading || !user}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary rounded-lg transition-colors disabled:opacity-50"
+                title="新建对话"
+              >
+                <Plus className="w-4 h-4" />
+                <span>新对话</span>
+              </button>
             </div>
           )}
 
@@ -793,11 +887,18 @@ export function ConversationView({
               <textarea
                 ref={textareaRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value)
+                  // 自动调整高度
+                  if (textareaRef.current) {
+                    textareaRef.current.style.height = 'auto'
+                    textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px'
+                  }
+                }}
                 onKeyDown={handleKeyPress}
                 placeholder={placeholder || '输入你的问题...'}
-                className="flex-1 bg-transparent resize-none outline-none text-base placeholder:text-muted-foreground min-h-[24px] max-h-[120px]"
-                rows={1}
+                className="flex-1 bg-transparent resize-none outline-none text-base placeholder:text-muted-foreground min-h-[44px] max-h-[200px] py-2 overflow-y-auto"
+                rows={2}
                 disabled={!user}
               />
 
