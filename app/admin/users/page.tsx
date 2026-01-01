@@ -48,6 +48,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 
 interface UserWithActions extends User {
   isEditing?: boolean
@@ -116,7 +117,7 @@ export default function UsersPage() {
         setApiError(data.error || '获取用户列表失败')
       }
     } catch (err) {
-      console.error('获取用户列表失败:', err)
+      logger.error('获取用户列表失败', err)
       setApiError('无法连接到服务器')
     } finally {
       setLoading(false)
@@ -191,7 +192,7 @@ export default function UsersPage() {
         )
       }
     } catch (err) {
-      console.error('更新用户角色失败:', err)
+      logger.error('更新用户角色失败', err)
     }
   }
 
@@ -210,7 +211,7 @@ export default function UsersPage() {
         )
       }
     } catch (err) {
-      console.error('更新用户状态失败:', err)
+      logger.error('更新用户状态失败', err)
     }
   }
 
@@ -235,7 +236,7 @@ export default function UsersPage() {
         setSelectedUserId(null)
       }
     } catch (err) {
-      console.error('重置密码失败:', err)
+      logger.error('重置密码失败', err)
     }
   }
 
@@ -264,7 +265,7 @@ export default function UsersPage() {
         alert(data.error || '删除失败')
       }
     } catch (err) {
-      console.error('删除用户失败:', err)
+      logger.error('删除用户失败', err)
     }
   }
 

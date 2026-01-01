@@ -3,9 +3,16 @@ import { randomUUID } from 'crypto'
 import { withErrorHandler } from '@/lib/middleware/error-handler'
 import { createError } from '@/lib/errors'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 async function handler(req: NextRequest) {
-  const formData = await req.formData()
+  let formData: FormData
+  try {
+    formData = await req.formData()
+  } catch {
+    throw createError.validation('请使用 multipart/form-data 格式上传文件')
+  }
+
   const file = formData.get('file') as File
 
   if (!file) {
@@ -41,7 +48,7 @@ async function handler(req: NextRequest) {
 
     if (error) {
       // Supabase Storage 失败，回退到 base64
-      console.warn('Supabase Storage upload failed, falling back to base64:', error.message)
+      logger.warn('Supabase Storage upload failed, falling back to base64', error.message)
       const base64 = buffer.toString('base64')
       const dataUrl = `data:${file.type};base64,${base64}`
 

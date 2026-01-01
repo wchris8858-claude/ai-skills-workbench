@@ -19,6 +19,7 @@ import {
   ShieldX
 } from 'lucide-react'
 import { useAuth, useIsAdmin } from '@/contexts/AuthContext'
+import { logger } from '@/lib/logger'
 
 interface ModelConfig {
   provider: string
@@ -124,7 +125,7 @@ export default function SettingsPage() {
         }
       }
     } catch (err) {
-      console.error('Failed to load config:', err)
+      logger.error('Failed to load config', err)
     }
   }
 

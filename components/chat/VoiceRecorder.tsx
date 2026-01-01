@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { Mic, MicOff, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 
 interface VoiceRecorderProps {
   isRecording: boolean
@@ -66,9 +67,9 @@ export function VoiceRecorder({
         setError('未能识别语音内容')
         onComplete('')
       }
-    } catch (err: any) {
-      console.error('Speech recognition error:', err)
-      setError(err.message || '语音识别失败')
+    } catch (err: unknown) {
+      logger.error('Speech recognition error', err)
+      setError(err instanceof Error ? err.message : '语音识别失败')
       onComplete('')
     } finally {
       setIsProcessing(false)
@@ -128,7 +129,7 @@ export function VoiceRecorder({
       }
 
       mediaRecorder.onerror = () => {
-        console.error('MediaRecorder error')
+        logger.error('MediaRecorder error')
         setError('录音出错，请重试')
         cleanup()
       }
@@ -136,11 +137,11 @@ export function VoiceRecorder({
       // 开始录音，每 1 秒获取一次数据
       mediaRecorder.start(1000)
       onStart()
-    } catch (err: any) {
-      console.error('Error starting recording:', err)
-      if (err.name === 'NotAllowedError') {
+    } catch (err: unknown) {
+      logger.error('Error starting recording', err)
+      if (err instanceof DOMException && err.name === 'NotAllowedError') {
         setError('请允许访问麦克风')
-      } else if (err.name === 'NotFoundError') {
+      } else if (err instanceof DOMException && err.name === 'NotFoundError') {
         setError('未检测到麦克风')
       } else {
         setError('无法启动录音')

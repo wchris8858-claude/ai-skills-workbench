@@ -10,6 +10,7 @@ import { getConversationMessages } from '@/lib/db/messages'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { withErrorHandler } from '@/lib/middleware/error-handler'
 import { createError } from '@/lib/errors'
+import { getCurrentUser } from '@/lib/auth'
 
 async function getHandler(
   request: NextRequest,
@@ -17,6 +18,12 @@ async function getHandler(
 ) {
   if (!isSupabaseConfigured) {
     throw createError.serviceUnavailable('Supabase 未配置')
+  }
+
+  // 验证用户登录
+  const currentUser = await getCurrentUser()
+  if (!currentUser) {
+    throw createError.unauthorized('请先登录')
   }
 
   const { id } = await params
@@ -43,6 +50,12 @@ async function deleteHandler(
 ) {
   if (!isSupabaseConfigured) {
     throw createError.serviceUnavailable('Supabase 未配置')
+  }
+
+  // 验证用户登录
+  const currentUser = await getCurrentUser()
+  if (!currentUser) {
+    throw createError.unauthorized('请先登录')
   }
 
   const { id } = await params

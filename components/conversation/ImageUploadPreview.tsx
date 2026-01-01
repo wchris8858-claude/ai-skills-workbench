@@ -1,6 +1,7 @@
 'use client'
 
 import { X } from 'lucide-react'
+import { logger } from '@/lib/logger'
 
 interface UploadedImage {
   url: string
@@ -33,7 +34,7 @@ export function ImageUploadPreview({ images, onRemove }: ImageUploadPreviewProps
             src={img.url}
             alt={img.name}
             className="w-20 h-20 object-cover"
-            onError={(e) => console.error('Image failed to load:', img.url, e)}
+            onError={(e) => logger.error('Image failed to load', { url: img.url, error: e })}
           />
           <button
             onClick={() => onRemove(img.url)}

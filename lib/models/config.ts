@@ -9,6 +9,8 @@
  * - 语音识别：讯飞 (iFlytek)
  */
 
+import { logger } from '@/lib/logger'
+
 // 模型提供商
 export type ModelProvider =
   | 'anthropic'   // Claude
@@ -363,7 +365,7 @@ export async function loadDynamicModelConfig(): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('Failed to load dynamic model config:', error)
+    logger.error('Failed to load dynamic model config', error)
   }
 }
 

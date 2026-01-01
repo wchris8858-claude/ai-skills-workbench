@@ -2,6 +2,8 @@
  * Google Gemini AI 客户端
  */
 
+import { logger } from '@/lib/logger'
+
 export interface GeminiRequest {
   model: string
   contents: {
@@ -81,7 +83,7 @@ export async function callGemini(request: GeminiRequest): Promise<string> {
 
     return candidate.content.parts[0].text
   } catch (error) {
-    console.error('Google API call failed:', error)
+    logger.error('Google API call failed', error)
     throw error
   }
 }

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { useAuth } from '@/contexts/AuthContext'
+import { logger } from '@/lib/logger'
 import {
   Store,
   FileText,
@@ -13,11 +14,9 @@ import {
   BarChart3,
   GraduationCap,
   MessageSquare,
-  ArrowRight,
   Loader2,
   ChevronLeft,
-  Settings,
-  Users,
+  Clock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -58,7 +57,7 @@ export default function ShopDetailPage({ params }: PageProps) {
           router.push('/shops')
         }
       } catch (error) {
-        console.error('Error loading shop:', error)
+        logger.error('Error loading shop', error)
       } finally {
         setLoading(false)
       }
@@ -67,14 +66,13 @@ export default function ShopDetailPage({ params }: PageProps) {
     loadShop()
   }, [user, shopId, router])
 
-  // 功能模块
+  // 功能模块（即将上线）
   const modules = [
     {
       id: 'content',
       name: '内容生成',
       description: '短视频脚本、小红书笔记、朋友圈文案',
       icon: FileText,
-      href: `/shops/${shopId}/content`,
       color: 'primary',
     },
     {
@@ -82,7 +80,6 @@ export default function ShopDetailPage({ params }: PageProps) {
       name: '内容日历',
       description: '规划和管理内容发布计划',
       icon: Calendar,
-      href: `/shops/${shopId}/calendar`,
       color: 'accent',
     },
     {
@@ -90,7 +87,6 @@ export default function ShopDetailPage({ params }: PageProps) {
       name: '数据分析',
       description: '运营数据录入与分析',
       icon: BarChart3,
-      href: `/shops/${shopId}/analytics`,
       color: 'primary',
     },
     {
@@ -98,7 +94,6 @@ export default function ShopDetailPage({ params }: PageProps) {
       name: '知识库',
       description: '品牌知识管理与智能问答',
       icon: MessageSquare,
-      href: `/shops/${shopId}/knowledge`,
       color: 'accent',
     },
     {
@@ -106,7 +101,6 @@ export default function ShopDetailPage({ params }: PageProps) {
       name: '员工培训',
       description: 'AI 对练与考核系统',
       icon: GraduationCap,
-      href: `/shops/${shopId}/training`,
       color: 'primary',
     },
   ]
@@ -206,41 +200,24 @@ export default function ShopDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* 操作按钮 */}
-          {(role === 'owner' || role === 'admin') && (
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/shops/${shopId}/settings`}
-                className="ink-button ink-button-secondary"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                设置
-              </Link>
-              {role === 'owner' && (
-                <Link
-                  href={`/shops/${shopId}/members`}
-                  className="ink-button ink-button-secondary"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  成员
-                </Link>
-              )}
-            </div>
-          )}
         </div>
 
         {/* 功能模块网格 */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {modules.map((module) => (
-            <Link
+            <div
               key={module.id}
-              href={module.href}
-              className="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-lg"
+              className="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-6 opacity-75"
             >
+              {/* 即将上线标记 */}
+              <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
+                <Clock className="h-3.5 w-3.5 text-amber-600" />
+                <span className="text-xs font-medium text-amber-600">即将上线</span>
+              </div>
+
               {/* 图标 */}
               <div className={cn(
                 "w-14 h-14 rounded-xl flex items-center justify-center mb-6",
-                "transition-all duration-300 group-hover:scale-110 group-hover:rotate-3",
                 module.color === 'primary'
                   ? 'bg-primary/10'
                   : 'bg-accent/10'
@@ -252,66 +229,44 @@ export default function ShopDetailPage({ params }: PageProps) {
               </div>
 
               {/* 内容 */}
-              <h3 className="font-heading text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+              <h3 className="font-heading text-xl font-semibold text-foreground mb-2">
                 {module.name}
               </h3>
               <p className="text-muted-foreground">
                 {module.description}
               </p>
 
-              {/* 箭头 */}
-              <div className="absolute bottom-6 right-6 opacity-0 transform translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                <ArrowRight className="h-5 w-5 text-primary" />
-              </div>
-
               {/* 装饰线 */}
-              <div className="mt-6 h-0.5 w-12 bg-gradient-to-r from-primary/50 to-transparent transition-all duration-300 group-hover:w-full" />
-            </Link>
+              <div className="mt-6 h-0.5 w-12 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+            </div>
           ))}
         </div>
 
-        {/* 快捷入口 */}
+        {/* 快捷入口（即将上线） */}
         <div className="mt-12">
           <h2 className="font-heading text-xl font-semibold text-foreground mb-6">
             快捷操作
+            <span className="ml-2 text-xs font-normal text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">即将上线</span>
           </h2>
           <div className="flex flex-wrap gap-3">
-            <Link
-              href={`/shops/${shopId}/content?feature=video_script`}
-              className="ink-tag ink-tag-inactive hover:ink-tag-active"
-            >
+            <span className="ink-tag ink-tag-inactive opacity-60 cursor-not-allowed">
               生成短视频脚本
-            </Link>
-            <Link
-              href={`/shops/${shopId}/content?feature=xiaohongshu`}
-              className="ink-tag ink-tag-inactive hover:ink-tag-active"
-            >
+            </span>
+            <span className="ink-tag ink-tag-inactive opacity-60 cursor-not-allowed">
               写小红书笔记
-            </Link>
-            <Link
-              href={`/shops/${shopId}/content?feature=moments`}
-              className="ink-tag ink-tag-inactive hover:ink-tag-active"
-            >
+            </span>
+            <span className="ink-tag ink-tag-inactive opacity-60 cursor-not-allowed">
               发朋友圈文案
-            </Link>
-            <Link
-              href={`/shops/${shopId}/content?feature=campaign`}
-              className="ink-tag ink-tag-inactive hover:ink-tag-active"
-            >
+            </span>
+            <span className="ink-tag ink-tag-inactive opacity-60 cursor-not-allowed">
               策划营销活动
-            </Link>
-            <Link
-              href={`/shops/${shopId}/knowledge?tab=qa`}
-              className="ink-tag ink-tag-inactive hover:ink-tag-active"
-            >
+            </span>
+            <span className="ink-tag ink-tag-inactive opacity-60 cursor-not-allowed">
               智能问答
-            </Link>
-            <Link
-              href={`/shops/${shopId}/training?tab=roleplay`}
-              className="ink-tag ink-tag-inactive hover:ink-tag-active"
-            >
+            </span>
+            <span className="ink-tag ink-tag-inactive opacity-60 cursor-not-allowed">
               AI 对练
-            </Link>
+            </span>
           </div>
         </div>
       </main>

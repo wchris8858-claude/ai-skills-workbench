@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { UserRole } from '@/types'
+import { logger } from '@/lib/logger'
 
 interface AuthUser {
   id: string
@@ -33,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json()
       setUser(data.user || null)
     } catch (error) {
-      console.error('获取用户信息失败:', error)
+      logger.error('获取用户信息失败', error)
       setUser(null)
     } finally {
       setLoading(false)

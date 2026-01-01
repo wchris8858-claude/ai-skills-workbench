@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { logger } from '@/lib/logger'
 
 export default async function DevToolsLayout({
   children,
@@ -36,7 +37,7 @@ export default async function DevToolsLayout({
       redirect('/')
     }
   } catch (error) {
-    console.error('Auth check failed:', error)
+    logger.error('Auth check failed', error)
     redirect('/login')
   }
 

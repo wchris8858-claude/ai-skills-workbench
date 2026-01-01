@@ -111,7 +111,7 @@ export async function saveMessages(
     .select()
 
   if (error) {
-    console.error('Error saving messages:', error)
+    logger.db.error('批量保存消息失败', error)
     return []
   }
 
@@ -134,7 +134,7 @@ export async function getConversationMessages(
     .order('created_at', { ascending: true })
 
   if (error) {
-    console.error('Error fetching messages:', error)
+    logger.db.error('获取消息列表失败', error)
     return []
   }
 
@@ -156,7 +156,7 @@ export async function getRecentMessages(
     .limit(limit)
 
   if (error) {
-    console.error('Error fetching recent messages:', error)
+    logger.db.error('获取最近消息失败', error)
     return []
   }
 
@@ -177,7 +177,7 @@ export async function getMessageById(
     .single()
 
   if (error) {
-    console.error('Error fetching message:', error)
+    logger.db.error('获取消息详情失败', error)
     return null
   }
 
@@ -194,7 +194,7 @@ export async function deleteMessage(messageId: string): Promise<boolean> {
     .eq('id', messageId)
 
   if (error) {
-    console.error('Error deleting message:', error)
+    logger.db.error('删除消息失败', error)
     return false
   }
 
@@ -217,7 +217,7 @@ export async function getAllUserMessages(
     .order('created_at', { ascending: true })
 
   if (error) {
-    console.error('Error fetching all user messages:', error)
+    logger.db.error('获取用户所有消息失败', error)
     return []
   }
 
@@ -240,7 +240,7 @@ export async function countConversationMessages(
     .eq('conversation_id', conversationId)
 
   if (error) {
-    console.error('Error counting messages:', error)
+    logger.db.error('统计消息数量失败', error)
     return 0
   }
 
@@ -263,7 +263,7 @@ export async function getLastMessage(
 
   if (error && error.code !== 'PGRST116') {
     // PGRST116 = no rows returned
-    console.error('Error fetching last message:', error)
+    logger.db.error('获取最后一条消息失败', error)
     return null
   }
 
@@ -282,7 +282,7 @@ export async function getConversationTokenCount(
     .eq('conversation_id', conversationId)
 
   if (error) {
-    console.error('Error fetching token count:', error)
+    logger.db.error('获取 Token 统计失败', error)
     return 0
   }
 
@@ -317,7 +317,7 @@ export async function getMessagesPaginated(
     .eq('conversation_id', conversationId)
 
   if (countError) {
-    console.error('Error counting messages:', countError)
+    logger.db.error('分页统计消息失败', countError)
     return { messages: [], total: 0, hasMore: false, page, pageSize }
   }
 
@@ -333,7 +333,7 @@ export async function getMessagesPaginated(
     .range(offset, offset + pageSize - 1)
 
   if (error) {
-    console.error('Error fetching paginated messages:', error)
+    logger.db.error('获取分页消息失败', error)
     return { messages: [], total, hasMore: false, page, pageSize }
   }
 
@@ -372,7 +372,7 @@ export async function getMessagesBefore(
     .limit(limit + 1) // 多获取一条用于判断是否还有更多
 
   if (error) {
-    console.error('Error fetching messages before:', error)
+    logger.db.error('获取历史消息失败', error)
     return { messages: [], hasMore: false }
   }
 
@@ -405,7 +405,7 @@ export async function searchMessages(
     .limit(limit)
 
   if (error) {
-    console.error('Error searching messages:', error)
+    logger.db.error('搜索消息失败', error)
     return []
   }
 

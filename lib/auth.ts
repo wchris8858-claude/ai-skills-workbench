@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { NextRequest } from 'next/server'
 import { UserRole } from '@/types'
+import { logger } from '@/lib/logger'
 
 // JWT 密钥配置
 // 生产环境必须设置 JWT_SECRET 环境变量,否则启动失败
@@ -16,7 +17,7 @@ const JWT_SECRET = (() => {
 
   // 开发环境允许使用默认密钥(仅用于本地开发)
   if (process.env.NODE_ENV === 'development' && !secret) {
-    console.warn('⚠️  使用默认 JWT_SECRET,仅限开发环境! 生产环境必须设置环境变量')
+    logger.warn('使用默认 JWT_SECRET，仅限开发环境! 生产环境必须设置环境变量')
     return 'ai-skills-workbench-dev-secret-2024'
   }
 

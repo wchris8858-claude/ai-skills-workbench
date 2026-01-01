@@ -91,13 +91,13 @@ export async function callUnifiedAPI(
  */
 export async function callTextModel(
   model: string,
-  messages: Array<{ role: string; content: string }>,
+  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
   temperature?: number,
   maxTokens?: number
 ): Promise<string> {
   const response = await callUnifiedAPI({
     model,
-    messages: messages as any,
+    messages,
     temperature,
     max_tokens: maxTokens,
   })
@@ -174,6 +174,10 @@ export async function callVisionModel(
 
   logger.debug(`[Unified Vision] 发送请求`, { endpoint, model })
 
+  // 设置超时控制器（45秒超时，留15秒缓冲给 Vercel 的 60s 限制）
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 45000)
+
   try {
     const response = await fetch(`${endpoint}/chat/completions`, {
       method: 'POST',
@@ -182,7 +186,10 @@ export async function callVisionModel(
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify(requestBody),
+      signal: controller.signal,
     })
+
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -202,6 +209,12 @@ export async function callVisionModel(
     logger.debug(`[Unified Vision] 请求成功`, { contentLength: content.length })
     return content
   } catch (error) {
+    clearTimeout(timeoutId)
+    // 处理超时错误
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.error('[Unified Vision] 请求超时（45秒）')
+      throw new Error('图片分析请求超时，请减少图片数量或稍后重试')
+    }
     logger.error('[Unified Vision] API 调用失败', error)
     throw error
   }

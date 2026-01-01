@@ -9,6 +9,7 @@ import path from 'path'
 import { parseSkillFile } from '@/lib/skills/parser'
 import { PRESET_SKILLS } from '@/lib/skills/config'
 import { withErrorHandler } from '@/lib/middleware/error-handler'
+import { logger } from '@/lib/logger'
 
 async function handler() {
   const skillsDir = path.join(process.cwd(), 'skills')
@@ -43,7 +44,7 @@ async function handler() {
         source: 'official',
       })
     } catch (error) {
-      console.warn(`Skipping invalid skill: ${dir}`, error)
+      logger.warn(`Skipping invalid skill: ${dir}`, error)
     }
   }
 

@@ -6,6 +6,7 @@
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { DbUsageStats } from './index'
 import { UsageStats } from '@/types'
+import { logger } from '@/lib/logger'
 
 // 获取 Supabase 客户端（使用 Service Role Key）
 const getDb = () => getSupabaseAdmin()
@@ -43,7 +44,7 @@ export async function recordUsage(
     .single()
 
   if (error) {
-    console.error('Error recording usage:', error)
+    logger.db.error('记录使用统计失败', error)
     return null
   }
 
@@ -68,7 +69,7 @@ export async function getUserStatsSummary(userId: string): Promise<{
     .eq('user_id', userId)
 
   if (allError || !allStats) {
-    console.error('Error fetching user stats:', allError)
+    logger.db.error('获取用户统计失败', allError)
     return {
       totalUsage: 0,
       totalTokens: 0,
@@ -140,7 +141,7 @@ export async function getSkillStats(skillId: string): Promise<{
     .eq('skill_id', skillId)
 
   if (error || !data) {
-    console.error('Error fetching skill stats:', error)
+    logger.db.error('获取技能统计失败', error)
     return {
       totalUsage: 0,
       totalTokens: 0,
@@ -185,7 +186,7 @@ export async function getUserSkillStats(
     .order('created_at', { ascending: false })
 
   if (error || !data) {
-    console.error('Error fetching user skill stats:', error)
+    logger.db.error('获取用户技能统计失败', error)
     return {
       totalUsage: 0,
       totalTokens: 0,
@@ -218,7 +219,7 @@ export async function getUserDailyTrend(
     .order('created_at', { ascending: true })
 
   if (error || !data) {
-    console.error('Error fetching daily trend:', error)
+    logger.db.error('获取每日趋势失败', error)
     return []
   }
 
@@ -252,7 +253,7 @@ export async function getPopularSkillsRanking(
     .select('skill_id')
 
   if (error || !data) {
-    console.error('Error fetching popular skills:', error)
+    logger.db.error('获取热门技能失败', error)
     return []
   }
 
@@ -286,7 +287,7 @@ export async function checkRateLimit(
     .gte('created_at', oneMinuteAgo.toISOString())
 
   if (error) {
-    console.error('Error checking rate limit:', error)
+    logger.db.error('检查速率限制失败', error)
     // 出错时允许访问，避免误拦截
     return { allowed: true, remaining: limitPerMinute, resetAt: new Date() }
   }
@@ -321,7 +322,7 @@ export async function getUserUsageHistory(
     .range(offset, offset + pageSize - 1)
 
   if (error) {
-    console.error('Error fetching usage history:', error)
+    logger.db.error('获取使用历史失败', error)
     return { stats: [], total: 0 }
   }
 

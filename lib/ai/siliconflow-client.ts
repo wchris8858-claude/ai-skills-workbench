@@ -415,6 +415,10 @@ export async function callSiliconFlowVision(
 
   logger.debug(`[SiliconFlow Vision] 发送请求`, { baseURL })
 
+  // 设置超时控制器（45秒超时，留15秒缓冲给 Vercel 的 60s 限制）
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 45000)
+
   try {
     const response = await fetch(`${baseURL}/chat/completions`, {
       method: 'POST',
@@ -423,7 +427,10 @@ export async function callSiliconFlowVision(
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify(requestBody),
+      signal: controller.signal,
     })
+
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -441,6 +448,12 @@ export async function callSiliconFlowVision(
 
     throw new Error('No response from SiliconFlow Vision API')
   } catch (error) {
+    clearTimeout(timeoutId)
+    // 处理超时错误
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.error('[SiliconFlow Vision] 请求超时（45秒）')
+      throw new Error('图片分析请求超时，请减少图片数量或稍后重试')
+    }
     logger.error('[SiliconFlow Vision] 调用失败', error)
     throw error
   }

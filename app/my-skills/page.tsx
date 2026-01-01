@@ -6,6 +6,7 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { SkillUploader } from '@/components/skills/SkillUploader'
 import { useConfirm } from '@/components/ui/confirm-dialog'
+import { logger } from '@/lib/logger'
 import {
   Plus,
   Edit,
@@ -50,7 +51,7 @@ export default function MySkillsPage() {
         const skills = await getUserSkills(user.id)
         setMySkills(skills)
       } catch (error) {
-        console.error('Error loading user skills:', error)
+        logger.error('Error loading user skills', error)
       } finally {
         setLoading(false)
       }
@@ -116,7 +117,7 @@ export default function MySkillsPage() {
         }
       }
     } catch (error) {
-      console.error('Error saving skill:', error)
+      logger.error('Error saving skill', error)
       alert(editingSkill?.id ? '更新技能失败，请重试' : '创建技能失败，请重试')
     }
 
@@ -151,7 +152,7 @@ export default function MySkillsPage() {
         alert('删除失败，请重试')
       }
     } catch (error) {
-      console.error('Error deleting skill:', error)
+      logger.error('Error deleting skill', error)
       alert('删除失败，请重试')
     } finally {
       setDeleting(null)
@@ -196,7 +197,7 @@ ${skill.content || '# ' + skill.name}
         )
       }
     } catch (error) {
-      console.error('Error updating skill:', error)
+      logger.error('Error updating skill', error)
     }
   }
 

@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { logger } from '@/lib/logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -86,7 +87,7 @@ export async function generateResponse(request: ChatRequest): Promise<string> {
 
     return '生成失败，请重试'
   } catch (error) {
-    console.error('Error generating response:', error)
+    logger.error('Error generating response', error)
     throw error
   }
 }

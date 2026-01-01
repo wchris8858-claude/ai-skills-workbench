@@ -1,16 +1,52 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SiteHeader } from '@/components/site-header'
 import { SkillTester } from './components/SkillTester'
 import { LogViewer } from './components/LogViewer'
 import { ModelSwitcher } from './components/ModelSwitcher'
 import { DbInspector } from './components/DbInspector'
-import { Wrench, Terminal, Cpu, Database } from 'lucide-react'
+import { Wrench, Terminal, Cpu, Database, Loader2, ShieldX } from 'lucide-react'
+import { useAuth, useIsAdmin } from '@/contexts/AuthContext'
 
 export default function DevToolsPage() {
+  const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
+  const isAdmin = useIsAdmin()
   const [activeTab, setActiveTab] = useState('skill-tester')
+
+  // 权限检查：非管理员重定向
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login')
+    } else if (!authLoading && user && !isAdmin) {
+      router.push('/')
+    }
+  }, [authLoading, user, isAdmin, router])
+
+  // 加载中
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+      </div>
+    )
+  }
+
+  // 非管理员显示无权限提示
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <ShieldX className="h-16 w-16 mx-auto text-destructive" />
+          <h1 className="text-2xl font-semibold">无权访问</h1>
+          <p className="text-muted-foreground">此页面仅限管理员访问</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen flex-col">

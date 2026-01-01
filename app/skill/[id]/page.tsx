@@ -11,6 +11,7 @@ import { getSkillById } from '@/lib/db/skills'
 import { cn } from '@/lib/utils'
 import { getIcon } from '@/lib/icons'
 import { getSkillModelConfig } from '@/lib/models/config'
+import { logger } from '@/lib/logger'
 
 export default function SkillPage() {
   const params = useParams()
@@ -46,7 +47,7 @@ export default function SkillPage() {
           setNotFound(true)
         }
       } catch (error) {
-        console.error('Error loading skill:', error)
+        logger.error('Error loading skill', error)
         setNotFound(true)
       } finally {
         setLoading(false)

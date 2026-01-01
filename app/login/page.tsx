@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 import {
   User,
   Lock,
@@ -69,7 +70,7 @@ export default function LoginPage() {
       await signIn(username, password)
       router.push('/')
     } catch (err: unknown) {
-      console.error('Login error:', err)
+      logger.error('Login error', err)
       setError(err instanceof Error ? err.message : '登录失败，请稍后重试')
     } finally {
       setLoading(false)
@@ -113,7 +114,7 @@ export default function LoginPage() {
             </div>
 
             {/* 表单 */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} method="POST" className="space-y-4">
               {/* 用户名输入框 */}
               <div className="space-y-1.5">
                 <label htmlFor="username" className="sr-only">用户名</label>

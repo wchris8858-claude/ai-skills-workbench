@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 import Link from 'next/link'
+import { logger } from '@/lib/logger'
 
 export default function Error({
   error,
@@ -12,8 +13,8 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    // 记录错误到控制台
-    console.error('Application error:', error)
+    // 记录错误到日志
+    logger.error('Application error', error)
   }, [error])
 
   return (

@@ -1,10 +1,8 @@
 import Link from 'next/link'
-import { Sparkles, Heart, ExternalLink } from 'lucide-react'
+import { Sparkles, Heart } from 'lucide-react'
 
 const footerLinks = [
   { href: '/docs', label: '文档' },
-  { href: '/privacy', label: '隐私政策' },
-  { href: '/terms', label: '服务条款' },
 ]
 
 export function SiteFooter() {
@@ -54,40 +52,14 @@ export function SiteFooter() {
             </nav>
           </div>
 
-          {/* 技术栈 */}
+          {/* 联系我们 */}
           <div className="space-y-4">
             <h3 className="font-heading font-semibold text-sm text-foreground">
-              技术支持
+              联系我们
             </h3>
-            <div className="flex flex-wrap gap-2">
-              <a
-                href="https://anthropic.com"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
-              >
-                Claude AI
-                <ExternalLink className="h-3 w-3" />
-              </a>
-              <a
-                href="https://nextjs.org"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Next.js
-                <ExternalLink className="h-3 w-3" />
-              </a>
-              <a
-                href="https://ui.shadcn.com"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-              >
-                shadcn/ui
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              如有问题或建议，欢迎联系我们的客服团队。
+            </p>
           </div>
         </div>
 

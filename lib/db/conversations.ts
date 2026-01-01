@@ -52,7 +52,7 @@ export async function createConversation(
     .single()
 
   if (error) {
-    console.error('Error creating conversation:', error)
+    logger.db.error('创建对话失败', error)
     return null
   }
 
@@ -72,7 +72,7 @@ export async function getUserConversations(
     .order('updated_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching conversations:', error)
+    logger.db.error('获取对话列表失败', error)
     return []
   }
 
@@ -94,7 +94,7 @@ export async function getUserConversationsBySkill(
     .order('updated_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching conversations by skill:', error)
+    logger.db.error('按技能获取对话失败', error)
     return []
   }
 
@@ -114,7 +114,7 @@ export async function getConversationById(
     .single()
 
   if (error) {
-    console.error('Error fetching conversation:', error)
+    logger.db.error('获取对话详情失败', error)
     return null
   }
 
@@ -133,7 +133,7 @@ export async function updateConversationTimestamp(
     .eq('id', conversationId)
 
   if (error) {
-    console.error('Error updating conversation timestamp:', error)
+    logger.db.error('更新对话时间戳失败', error)
   }
 }
 
@@ -149,7 +149,7 @@ export async function deleteConversation(
     .eq('id', conversationId)
 
   if (error) {
-    console.error('Error deleting conversation:', error)
+    logger.db.error('删除对话失败', error)
     return false
   }
 
@@ -168,7 +168,7 @@ export async function deleteAllUserConversations(
     .eq('user_id', userId)
 
   if (error) {
-    console.error('Error deleting all conversations:', error)
+    logger.db.error('删除所有对话失败', error)
     return false
   }
 
@@ -288,6 +288,12 @@ export async function searchConversations(
   userId: string,
   query: string
 ): Promise<Omit<Conversation, 'messages'>[]> {
+  // 定义 join 查询的结果类型
+  interface MessageWithConversation {
+    conversation_id: string
+    conversations: DbConversation | null
+  }
+
   const { data, error } = await getDb()
     .from('messages')
     .select(`
@@ -299,14 +305,14 @@ export async function searchConversations(
     .limit(50)
 
   if (error) {
-    console.error('Error searching conversations:', error)
+    logger.db.error('搜索对话失败', error)
     return []
   }
 
   // 去重并转换
   const uniqueConversations = new Map()
-  for (const item of data || []) {
-    const conv = (item as any).conversations
+  for (const item of (data || []) as MessageWithConversation[]) {
+    const conv = item.conversations
     if (conv && !uniqueConversations.has(conv.id)) {
       uniqueConversations.set(conv.id, dbConversationToConversation(conv))
     }

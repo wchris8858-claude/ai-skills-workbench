@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { logger } from '@/lib/logger'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -59,7 +60,7 @@ let supabaseAdmin: SupabaseClient | null = null
 
 export function getSupabaseAdmin(): SupabaseClient {
   if (!isSupabaseAdminConfigured) {
-    console.warn('SUPABASE_SERVICE_ROLE_KEY 未配置，将使用 anon key（受 RLS 限制）')
+    logger.warn('SUPABASE_SERVICE_ROLE_KEY 未配置，将使用 anon key（受 RLS 限制）')
     return supabase
   }
 

@@ -3,6 +3,7 @@ import { writeFileSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { withErrorHandler } from '@/lib/middleware/error-handler'
 import { createError } from '@/lib/errors'
+import { getCurrentUser, isAdmin } from '@/lib/auth'
 import { z } from 'zod'
 
 // AI配置验证 schema
@@ -16,6 +17,15 @@ const AIConfigSchema = z.object({
  * 更新 AI API 配置
  */
 async function handler(req: NextRequest) {
+  // 检查登录状态和权限
+  const currentUser = await getCurrentUser()
+  if (!currentUser) {
+    throw createError.unauthorized('请先登录')
+  }
+  if (!isAdmin(currentUser.role)) {
+    throw createError.forbidden('权限不足，需要管理员权限')
+  }
+
   const body = await req.json()
 
   // 验证输入

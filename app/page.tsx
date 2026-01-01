@@ -9,6 +9,7 @@ import { SkillCard } from '@/components/skills/SkillCard'
 import { SKILL_CATEGORIES, Skill } from '@/types'
 import { PRESET_SKILLS } from '@/lib/skills/config'
 import { useAuth } from '@/contexts/AuthContext'
+import { logger } from '@/lib/logger'
 import {
   Search,
   Upload,
@@ -56,7 +57,7 @@ export default function HomePage() {
           setUserSkills(customSkills)
         }
       } catch (error) {
-        console.error('Error loading skills:', error)
+        logger.error('Error loading skills', error)
         setUseDatabase(false)
       } finally {
         setLoading(false)

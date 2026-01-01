@@ -6,6 +6,7 @@
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { DbSkill } from './index'
 import { Skill, SkillSource } from '@/types'
+import { logger } from '@/lib/logger'
 
 // 获取 Supabase 客户端（使用 Service Role Key）
 const getDb = () => getSupabaseAdmin()
@@ -50,7 +51,7 @@ export async function getOfficialSkills(): Promise<Skill[]> {
     .order('usage_count', { ascending: false })
 
   if (error) {
-    console.error('Error fetching official skills:', error)
+    logger.db.error('获取官方技能失败', error)
     return []
   }
 
@@ -68,7 +69,7 @@ export async function getPublicSkills(): Promise<Skill[]> {
     .order('usage_count', { ascending: false })
 
   if (error) {
-    console.error('Error fetching public skills:', error)
+    logger.db.error('获取公开技能失败', error)
     return []
   }
 
@@ -87,7 +88,7 @@ export async function getUserSkills(userId: string): Promise<Skill[]> {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching user skills:', error)
+    logger.db.error('获取用户技能失败', error)
     return []
   }
 
@@ -105,7 +106,7 @@ export async function getSkillById(skillId: string): Promise<Skill | null> {
     .single()
 
   if (error) {
-    console.error('Error fetching skill:', error)
+    logger.db.error('获取技能详情失败', error)
     return null
   }
 
@@ -124,7 +125,7 @@ export async function getSkillsByCategory(category: string): Promise<Skill[]> {
     .order('usage_count', { ascending: false })
 
   if (error) {
-    console.error('Error fetching skills by category:', error)
+    logger.db.error('按分类获取技能失败', error)
     return []
   }
 
@@ -144,7 +145,7 @@ export async function searchSkills(query: string): Promise<Skill[]> {
     .limit(20)
 
   if (error) {
-    console.error('Error searching skills:', error)
+    logger.db.error('搜索技能失败', error)
     return []
   }
 
@@ -212,7 +213,7 @@ export async function createSkill(
     content: skill.content,
   })
   if (!validation.valid) {
-    console.error('Skill validation failed:', validation.error)
+    logger.db.error('技能验证失败', validation.error)
     throw new Error(validation.error)
   }
 
@@ -235,7 +236,7 @@ export async function createSkill(
     .single()
 
   if (error) {
-    console.error('Error creating skill:', error)
+    logger.db.error('创建技能失败', error)
     return null
   }
 
@@ -256,7 +257,7 @@ export async function updateSkill(
     content: updates.content,
   })
   if (!validation.valid) {
-    console.error('Skill validation failed:', validation.error)
+    logger.db.error('技能验证失败', validation.error)
     throw new Error(validation.error)
   }
 
@@ -282,7 +283,7 @@ export async function updateSkill(
     .single()
 
   if (error) {
-    console.error('Error updating skill:', error)
+    logger.db.error('更新技能失败', error)
     return null
   }
 
@@ -299,7 +300,7 @@ export async function deleteSkill(skillId: string): Promise<boolean> {
     .eq('id', skillId)
 
   if (error) {
-    console.error('Error deleting skill:', error)
+    logger.db.error('删除技能失败', error)
     return false
   }
 
@@ -367,7 +368,7 @@ export async function getPopularSkills(limit: number = 10): Promise<Skill[]> {
     .limit(limit)
 
   if (error) {
-    console.error('Error fetching popular skills:', error)
+    logger.db.error('获取热门技能失败', error)
     return []
   }
 
@@ -401,7 +402,7 @@ export async function getRecentlyUsedSkills(
     .in('id', skillIds)
 
   if (skillsError) {
-    console.error('Error fetching recently used skills:', skillsError)
+    logger.db.error('获取最近使用技能失败', skillsError)
     return []
   }
 

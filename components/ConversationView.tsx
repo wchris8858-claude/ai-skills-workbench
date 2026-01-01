@@ -28,6 +28,7 @@ import {
   EmptyState,
 } from './conversation'
 import { compressImage } from '@/lib/utils/image-compression'
+import { logger } from '@/lib/logger'
 
 interface ConversationViewProps {
   skillId: string
@@ -138,7 +139,7 @@ export function ConversationView({
           setFavorited(favoritedSet)
         }
       } catch (error) {
-        console.error('Error loading conversation:', error)
+        logger.error('Error loading conversation', error)
       } finally {
         setLoadingHistory(false)
       }
@@ -181,7 +182,7 @@ export function ConversationView({
         setHasMoreHistory(false)
       }
     } catch (error) {
-      console.error('Error loading more history:', error)
+      logger.error('Error loading more history', error)
     } finally {
       setLoadingMoreHistory(false)
     }
@@ -193,12 +194,12 @@ export function ConversationView({
     uploadingCountRef.current += 1
     setIsUploading(true)
     try {
-      // 压缩选项
+      // 压缩选项 - 降低大小以确保多图上传时请求体不超限
       const compressionOptions = {
-        maxWidth: 1920,
-        maxHeight: 1080,
-        quality: 0.8,
-        maxSizeKB: 500,
+        maxWidth: 1280,  // 降低最大宽度
+        maxHeight: 720,  // 降低最大高度
+        quality: 0.7,    // 降低质量
+        maxSizeKB: 300,  // 降低最大文件大小 (300KB * 4张 * 1.33 ≈ 1.6MB)
       }
 
       // 只压缩一次，生成压缩后的文件
@@ -274,7 +275,7 @@ export function ConversationView({
       setMediaRecorder(recorder)
       setIsRecording(true)
     } catch (error: unknown) {
-      console.error('Recording error:', error)
+      logger.error('Recording error', error)
 
       // 根据错误类型给出更具体的提示
       let errorMessage = '无法访问麦克风'
@@ -357,7 +358,7 @@ export function ConversationView({
         alert(errorMsg)
       }
     } catch (error) {
-      console.error('STT error:', error)
+      logger.error('STT error', error)
 
       // 判断网络错误类型
       let errorMsg = '语音识别失败'
@@ -422,7 +423,7 @@ export function ConversationView({
         if (activeConvId) {
           setConversationId(activeConvId)
         } else {
-          console.error('Failed to create conversation ID')
+          logger.error('Failed to create conversation ID')
           // 继续执行，但不保存消息到数据库
         }
       }
@@ -439,7 +440,7 @@ export function ConversationView({
             })) : undefined,
           })
         } catch (saveError) {
-          console.error('Failed to save user message:', saveError)
+          logger.error('Failed to save user message', saveError)
           // 继续执行 AI 请求，即使保存失败
         }
       }
@@ -479,10 +480,37 @@ export function ConversationView({
         })
       })
 
+      // 先检查响应状态
+      if (!response.ok) {
+        let errorMsg = `请求失败 (${response.status})`
+        try {
+          const errorData = await response.json()
+          // 处理不同格式的错误响应
+          if (errorData.error) {
+            if (typeof errorData.error === 'string') {
+              errorMsg = errorData.error
+            } else if (errorData.error.message) {
+              errorMsg = errorData.error.message
+            }
+          }
+          // 速率限制特殊处理
+          if (errorData.code === 'RATE_LIMIT_EXCEEDED') {
+            errorMsg = `请求过于频繁，请 ${errorData.retryAfter || 60} 秒后重试`
+          }
+        } catch {
+          // JSON 解析失败，使用默认错误信息
+        }
+        throw new Error(errorMsg)
+      }
+
       const data = await response.json()
 
+      // 检查响应体中的错误（兼容旧格式）
       if (data.error) {
-        throw new Error(data.error)
+        const errorMsg = typeof data.error === 'string'
+          ? data.error
+          : (data.error.message || '未知错误')
+        throw new Error(errorMsg)
       }
 
       const responseTime = Date.now() - startTime
@@ -523,14 +551,33 @@ export function ConversationView({
           responseTime
         )
       } else {
-        console.error('Conversation ID is null, cannot save AI response')
+        logger.error('Conversation ID is null, cannot save AI response')
       }
     } catch (error) {
-      console.error('Error:', error)
+      logger.error('Chat error', error)
+      // 获取具体的错误信息
+      let errorContent = '抱歉，处理请求时出现错误。'
+      if (error instanceof Error) {
+        // 使用实际的错误信息
+        if (error.message.includes('请求过于频繁')) {
+          errorContent = error.message
+        } else if (error.message.includes('请求失败')) {
+          errorContent = error.message
+        } else if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+          errorContent = '请求超时，请稍后重试。图片分析可能需要较长时间，建议减少上传图片数量。'
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('网络')) {
+          errorContent = '网络连接失败，请检查网络后重试。'
+        } else if (error.message !== '[object Object]' && error.message.length < 200) {
+          // 只显示合理长度的错误信息
+          errorContent = `处理失败：${error.message}`
+        } else {
+          errorContent = '抱歉，处理请求时出现错误。请稍后重试。'
+        }
+      }
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: '抱歉，处理请求时出现错误。请稍后重试。',
+        content: errorContent,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, errorMessage])
@@ -555,7 +602,7 @@ export function ConversationView({
       setCopied(messageId)
       setTimeout(() => setCopied(null), 2000)
     } catch (error) {
-      console.error('Failed to copy:', error)
+      logger.error('Failed to copy', error)
     }
   }, [])
 
@@ -649,7 +696,7 @@ export function ConversationView({
         )
       }
     } catch (error) {
-      console.error('Regenerate error:', error)
+      logger.error('Regenerate error', error)
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -688,7 +735,7 @@ export function ConversationView({
         return next
       })
     } catch (error) {
-      console.error('Error toggling favorite:', error)
+      logger.error('Error toggling favorite', error)
     }
   }, [user])
 
@@ -721,7 +768,7 @@ export function ConversationView({
         setConversationId(newConvId)
       }
     } catch (error) {
-      console.error('Failed to create new conversation:', error)
+      logger.error('Failed to create new conversation', error)
     }
   }, [user, isLoading, skillId])
 

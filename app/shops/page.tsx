@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { useAuth } from '@/contexts/AuthContext'
+import { logger } from '@/lib/logger'
 import {
   Store,
   Plus,
@@ -48,7 +49,7 @@ export default function ShopsPage() {
           setShops(data.shops || [])
         }
       } catch (error) {
-        console.error('Error loading shops:', error)
+        logger.error('Error loading shops', error)
       } finally {
         setLoading(false)
       }

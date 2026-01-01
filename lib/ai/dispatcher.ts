@@ -11,7 +11,7 @@
  */
 
 import { callTextModel, callImageModel, callVisionModel } from './unified-client'
-import { callSiliconFlowText, callSiliconFlowImage, callSiliconFlowVision } from './siliconflow-client'
+import { callSiliconFlowText, callSiliconFlowImage, callSiliconFlowVision, type SiliconFlowMessage } from './siliconflow-client'
 import { getSkillModelConfig, getModelConfigById, type ModelProvider, type ModelConfig } from '../models/config'
 import { logger } from '../logger'
 import {
@@ -128,8 +128,9 @@ export async function dispatchAI(request: AIRequest): Promise<AIResponse> {
     }
   }
 
-  // 构建消息
-  const messages: Array<{ role: string; content: string }> = []
+  // 构建消息 - 使用明确的角色类型
+  type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
+  const messages: ChatMessage[] = []
 
   // 添加系统提示（如果有）
   if (request.systemPrompt) {
@@ -164,7 +165,7 @@ export async function dispatchAI(request: AIRequest): Promise<AIResponse> {
       // 使用 SiliconFlow API
       content = await callSiliconFlowText(
         model,
-        messages as any,
+        messages,
         textModel.temperature,
         textModel.maxTokens
       )
@@ -329,7 +330,7 @@ export async function dispatchV2(request: AIRequest): Promise<AIResponse> {
 
   for (const modelConfig of models) {
     // 跳过未配置的提供商
-    if (!isProviderConfigured(modelConfig.provider as any)) {
+    if (!isProviderConfigured(modelConfig.provider)) {
       logger.warn('[AI Dispatcher v2] Provider not configured, skipping', {
         provider: modelConfig.provider
       })
@@ -342,8 +343,9 @@ export async function dispatchV2(request: AIRequest): Promise<AIResponse> {
         model: modelConfig.model
       })
 
-      // 构建消息
-      const messages: Array<{ role: string; content: string }> = []
+      // 构建消息 - 使用明确的角色类型
+      type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
+      const messages: ChatMessage[] = []
       if (systemPrompt) {
         messages.push({ role: 'system', content: systemPrompt })
       }
@@ -353,7 +355,7 @@ export async function dispatchV2(request: AIRequest): Promise<AIResponse> {
 
       // 根据提供商调用对应的 API
       if (modelConfig.provider === 'siliconflow') {
-        content = await callSiliconFlowText(modelConfig.model, messages as any)
+        content = await callSiliconFlowText(modelConfig.model, messages)
       } else {
         content = await callTextModel(modelConfig.model, messages)
       }

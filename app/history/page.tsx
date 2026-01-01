@@ -11,6 +11,7 @@ import { getRecentConversationsWithSkills, deleteConversation } from '@/lib/db/c
 import { Conversation } from '@/types'
 import { getIcon } from '@/lib/icons'
 import { useConfirm } from '@/components/ui/confirm-dialog'
+import { logger } from '@/lib/logger'
 
 interface HistoryItem {
   conversation: Omit<Conversation, 'messages'>
@@ -40,7 +41,7 @@ export default function HistoryPage() {
         const conversations = await getRecentConversationsWithSkills(user.id, 50)
         setHistory(conversations)
       } catch (error) {
-        console.error('Error loading history:', error)
+        logger.error('Error loading history', error)
       } finally {
         setLoading(false)
       }
@@ -98,7 +99,7 @@ export default function HistoryPage() {
         setHistory(prev => prev.filter(item => item.conversation.id !== conversationId))
       }
     } catch (error) {
-      console.error('Error deleting conversation:', error)
+      logger.error('Error deleting conversation', error)
     } finally {
       setDeleting(null)
     }

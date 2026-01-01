@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { withErrorHandler } from '@/lib/middleware/error-handler'
 import { createError } from '@/lib/errors'
+import { getCurrentUser, isAdmin } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
 // 模型配置验证 schema
@@ -14,6 +16,15 @@ const ModelConfigsSchema = z.object({
  * 保存模型配置到数据库
  */
 async function handler(req: NextRequest) {
+  // 检查登录状态和权限
+  const currentUser = await getCurrentUser()
+  if (!currentUser) {
+    throw createError.unauthorized('请先登录')
+  }
+  if (!isAdmin(currentUser.role)) {
+    throw createError.forbidden('权限不足，需要管理员权限')
+  }
+
   const body = await req.json()
 
   // 验证输入
@@ -38,7 +49,7 @@ async function handler(req: NextRequest) {
     })
 
   if (error) {
-    console.error('Failed to save model configs:', error)
+    logger.db.error('Failed to save model configs', error)
     throw createError.database('保存模型配置失败')
   }
 

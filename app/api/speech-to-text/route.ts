@@ -4,7 +4,13 @@ import { withErrorHandler } from '@/lib/middleware/error-handler'
 import { createError } from '@/lib/errors'
 
 async function handler(req: NextRequest) {
-  const formData = await req.formData()
+  let formData: FormData
+  try {
+    formData = await req.formData()
+  } catch {
+    throw createError.validation('请使用 multipart/form-data 格式上传音频')
+  }
+
   const file = formData.get('file') as File
   const language = formData.get('language') as string || 'zh'
 

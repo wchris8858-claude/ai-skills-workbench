@@ -26,15 +26,29 @@ async function handler(req: NextRequest) {
   let modelOverride: string | undefined
   let conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = []
 
+  // 解析请求体，单独捕获解析错误
+  let body: Record<string, unknown>
   try {
-    const body = await req.json()
-    skillId = body.skillId
-    message = body.message
-    modelOverride = body.model // 支持前端指定模型覆盖默认配置
+    body = await req.json()
+  } catch (parseError) {
+    logger.error('[Chat API] JSON 解析失败', {
+      error: parseError instanceof Error ? parseError.message : String(parseError),
+    })
+    return NextResponse.json({
+      content: '请求格式错误，可能是图片数据过大。请尝试减少上传的图片数量或降低图片质量。',
+      isMock: true,
+      mockReason: '请求解析失败',
+    })
+  }
+
+  try {
+    skillId = body.skillId as string
+    message = body.message as string
+    modelOverride = body.model as string | undefined
     // 支持 images 和 attachments 两个字段名
-    attachments = body.attachments || body.images || []
+    attachments = (body.attachments || body.images || []) as Attachment[]
     // 支持传递对话历史用于上下文记忆
-    conversationHistory = body.history || []
+    conversationHistory = (body.history || []) as Array<{ role: 'user' | 'assistant'; content: string }>
 
     // 如果是图片URL数组,转换为attachments格式
     if (Array.isArray(attachments) && attachments.length > 0 && typeof attachments[0] === 'string') {
@@ -44,11 +58,17 @@ async function handler(req: NextRequest) {
       }))
     }
 
+    // 计算请求体大小用于诊断
+    const totalBase64Size = attachments.reduce((sum, att) => sum + (att.base64?.length || 0), 0)
+    const totalHistorySize = conversationHistory.reduce((sum, msg) => sum + msg.content.length, 0)
+
     logger.api.request('POST', '/api/claude/chat', {
       skillId,
       messageLength: message.length,
       attachmentsCount: attachments.length,
-      historyLength: conversationHistory.length
+      historyLength: conversationHistory.length,
+      totalBase64SizeKB: Math.round(totalBase64Size / 1024),
+      totalHistorySizeKB: Math.round(totalHistorySize / 1024),
     })
 
     // 调试：打印 attachments 详情

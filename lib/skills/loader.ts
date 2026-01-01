@@ -6,6 +6,7 @@
 import { Skill, SkillSource } from '@/types'
 import { PRESET_SKILLS } from '@/lib/skills/config'
 import { parseSkillFile, validateSkillFile, ParsedSkill } from './parser'
+import { logger } from '@/lib/logger'
 
 // 缓存已加载的 Skills
 const skillCache = new Map<string, ParsedSkill>()
@@ -71,7 +72,7 @@ export async function loadSkillContent(skillId: string): Promise<ParsedSkill | n
     // 验证
     const validation = validateSkillFile(parsed)
     if (!validation.valid) {
-      console.warn(`Skill validation warnings for ${skillId}:`, validation.errors)
+      logger.warn(`Skill validation warnings for ${skillId}`, validation.errors)
     }
     
     // 缓存
@@ -79,7 +80,7 @@ export async function loadSkillContent(skillId: string): Promise<ParsedSkill | n
     
     return parsed
   } catch (error) {
-    console.error(`Error loading skill ${skillId}:`, error)
+    logger.error(`Error loading skill ${skillId}`, error)
     return null
   }
 }
@@ -111,11 +112,11 @@ async function loadSkillsFromFileSystem(): Promise<ParsedSkill[]> {
         skills.push(parsed)
       } catch {
         // 跳过无法读取的文件
-        console.warn(`Skipping invalid skill directory: ${dir}`)
+        logger.warn(`Skipping invalid skill directory: ${dir}`)
       }
     }
   } catch {
-    console.warn('Skills directory not found, using preset skills')
+    logger.warn('Skills directory not found, using preset skills')
   }
   
   return skills

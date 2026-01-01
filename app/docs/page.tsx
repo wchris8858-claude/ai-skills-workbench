@@ -23,10 +23,10 @@ export default function DocsPage() {
       icon: Sparkles,
       description: '平台提供的预设 AI 技能',
       items: [
-        { title: '朋友圈文案', description: '生成吸引人的朋友圈文案' },
-        { title: '官方通知', description: '生成正式的官方通知文本' },
-        { title: '海报制作', description: '生成创意海报设计' },
-        { title: 'AI 选片修片', description: '智能照片评分和修图建议' },
+        { title: '朋友圈文案', description: '生成吸引人的朋友圈文案', href: '/skill/moments-copywriter' },
+        { title: '短视频脚本', description: '生成爆款短视频脚本', href: '/skill/video-script' },
+        { title: '海报制作', description: '生成创意海报设计', href: '/skill/poster-creator' },
+        { title: 'AI 选片修片', description: '智能照片评分和修图建议', href: '/skill/photo-selector' },
       ]
     },
     {
@@ -104,11 +104,8 @@ export default function DocsPage() {
                     {section.description}
                   </p>
                   <div className="space-y-3">
-                    {section.items.map((item) => (
-                      <div
-                        key={item.title}
-                        className="group cursor-pointer rounded-lg p-3 transition-all hover:bg-secondary/50"
-                      >
+                    {section.items.map((item) => {
+                      const content = (
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
                             <h3 className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">
@@ -120,8 +117,31 @@ export default function DocsPage() {
                           </div>
                           <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
                         </div>
-                      </div>
-                    ))}
+                      )
+
+                      // 如果有 href，使用 Link 包装
+                      if ('href' in item && item.href) {
+                        return (
+                          <Link
+                            key={item.title}
+                            href={item.href}
+                            className="group block cursor-pointer rounded-lg p-3 transition-all hover:bg-secondary/50"
+                          >
+                            {content}
+                          </Link>
+                        )
+                      }
+
+                      // 否则使用普通 div
+                      return (
+                        <div
+                          key={item.title}
+                          className="group cursor-pointer rounded-lg p-3 transition-all hover:bg-secondary/50"
+                        >
+                          {content}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               ))}

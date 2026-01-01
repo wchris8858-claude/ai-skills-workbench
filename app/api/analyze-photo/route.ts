@@ -4,7 +4,13 @@ import { withErrorHandler } from '@/lib/middleware/error-handler'
 import { createError } from '@/lib/errors'
 
 async function handler(request: NextRequest) {
-  const formData = await request.formData()
+  let formData: FormData
+  try {
+    formData = await request.formData()
+  } catch {
+    throw createError.validation('请使用 multipart/form-data 格式上传图片')
+  }
+
   const imageFile = formData.get('image') as File
 
   if (!imageFile) {

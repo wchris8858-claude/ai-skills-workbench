@@ -2,6 +2,8 @@
  * 豆包（ByteDance）AI 客户端
  */
 
+import { logger } from '@/lib/logger'
+
 export interface ByteDanceRequest {
   model: string
   messages: {
@@ -69,7 +71,7 @@ export async function callByteDance(request: ByteDanceRequest): Promise<string> 
 
     return data.choices[0].message.content
   } catch (error) {
-    console.error('ByteDance API call failed:', error)
+    logger.error('ByteDance API call failed', error)
     throw error
   }
 }

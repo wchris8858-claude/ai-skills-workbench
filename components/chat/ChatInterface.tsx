@@ -6,6 +6,7 @@ import { MessageBubble } from './MessageBubble'
 import { InputArea } from './InputArea'
 import { cn } from '@/lib/utils'
 import { generateId } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 
 interface ChatInterfaceProps {
   skill: Partial<Skill>
@@ -71,7 +72,7 @@ export function ChatInterface({ skill, className }: ChatInterfaceProps) {
 
       setMessages(prev => [...prev, assistantMessage])
     } catch (error) {
-      console.error('Error sending message:', error)
+      logger.error('Error sending message', error)
       // Add error message
       const errorMessage: Message = {
         id: generateId(),

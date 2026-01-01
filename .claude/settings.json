@@ -1,0 +1,46 @@
+{
+  "$schema": "https://claude.ai/schemas/claude-code-settings.json",
+  "project": {
+    "name": "AI Skills Workbench",
+    "description": "AI技能工作台 - 统一技能调用平台",
+    "version": "1.0.0"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Read(/Users/wanghui/DJ - AI工具箱/ai-skills-workbench/**)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)"
+    ]
+  },
+  "context": {
+    "include": [
+      "CLAUDE.md",
+      "constitution.md",
+      "README.md"
+    ],
+    "exclude": [
+      "node_modules/**",
+      ".next/**",
+      "*.log"
+    ]
+  },
+  "commands": {
+    "dev": "进入开发模式，启动开发服务器",
+    "test": "运行测试套件",
+    "build": "构建生产版本",
+    "lint": "代码检查"
+  },
+  "hooks": {
+    "pre-commit": ".claude/hooks/pre-commit.sh",
+    "post-edit": ".claude/hooks/post-edit.sh"
+  }
+}

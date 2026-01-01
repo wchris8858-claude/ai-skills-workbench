@@ -6,6 +6,7 @@
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { DbFavorite } from './index'
 import { Message } from '@/types'
+import { logger } from '@/lib/logger'
 
 // 获取 Supabase 客户端（使用 Service Role Key）
 const getDb = () => getSupabaseAdmin()
@@ -90,7 +91,7 @@ export async function batchCheckFavorites(
     .in('message_id', messageIds)
 
   if (error) {
-    console.error('Error batch checking favorites:', error)
+    logger.db.error('批量检查收藏失败', error)
     return new Set()
   }
 
@@ -130,7 +131,7 @@ export async function addMessageToFavorites(
 
       return existing ? dbFavoriteToFavorite(existing) : null
     }
-    console.error('Error adding message to favorites:', error)
+    logger.db.error('收藏消息失败', error)
     return null
   }
 
@@ -165,7 +166,7 @@ export async function addConversationToFavorites(
 
       return existing ? dbFavoriteToFavorite(existing) : null
     }
-    console.error('Error adding conversation to favorites:', error)
+    logger.db.error('收藏对话失败', error)
     return null
   }
 
@@ -186,7 +187,7 @@ export async function removeMessageFromFavorites(
     .eq('message_id', messageId)
 
   if (error) {
-    console.error('Error removing message from favorites:', error)
+    logger.db.error('取消消息收藏失败', error)
     return false
   }
 
@@ -207,7 +208,7 @@ export async function removeConversationFromFavorites(
     .eq('conversation_id', conversationId)
 
   if (error) {
-    console.error('Error removing conversation from favorites:', error)
+    logger.db.error('取消对话收藏失败', error)
     return false
   }
 
@@ -229,7 +230,7 @@ export async function isMessageFavorited(
     .single()
 
   if (error && error.code !== 'PGRST116') {
-    console.error('Error checking message favorite:', error)
+    logger.db.error('检查消息收藏状态失败', error)
   }
 
   return !!data
@@ -250,7 +251,7 @@ export async function isConversationFavorited(
     .single()
 
   if (error && error.code !== 'PGRST116') {
-    console.error('Error checking conversation favorite:', error)
+    logger.db.error('检查对话收藏状态失败', error)
   }
 
   return !!data
@@ -273,7 +274,7 @@ export async function getFavoriteMessages(
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching favorite messages:', error)
+    logger.db.error('获取收藏消息列表失败', error)
     return []
   }
 
@@ -319,7 +320,7 @@ export async function getFavoriteConversations(
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching favorite conversations:', error)
+    logger.db.error('获取收藏对话列表失败', error)
     return []
   }
 
@@ -347,7 +348,7 @@ export async function getUserFavorites(userId: string): Promise<Favorite[]> {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching user favorites:', error)
+    logger.db.error('获取用户收藏列表失败', error)
     return []
   }
 
@@ -364,7 +365,7 @@ export async function clearAllFavorites(userId: string): Promise<boolean> {
     .eq('user_id', userId)
 
   if (error) {
-    console.error('Error clearing favorites:', error)
+    logger.db.error('清空收藏失败', error)
     return false
   }
 
@@ -377,26 +378,26 @@ export async function clearAllFavorites(userId: string): Promise<boolean> {
 export async function getFavoritesCount(
   userId: string
 ): Promise<{ messages: number; conversations: number }> {
-  const { data: messages, error: msgError } = await getDb()
+  const { count: msgCount, error: msgError } = await getDb()
     .from('favorites')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .not('message_id', 'is', null)
 
-  const { data: conversations, error: convError } = await getDb()
+  const { count: convCount, error: convError } = await getDb()
     .from('favorites')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .not('conversation_id', 'is', null)
 
   if (msgError || convError) {
-    console.error('Error fetching favorites count:', msgError || convError)
+    logger.db.error('获取收藏数量失败', msgError || convError)
     return { messages: 0, conversations: 0 }
   }
 
   return {
-    messages: (messages as any)?.count || 0,
-    conversations: (conversations as any)?.count || 0,
+    messages: msgCount ?? 0,
+    conversations: convCount ?? 0,
   }
 }
 

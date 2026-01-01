@@ -4,6 +4,8 @@
  * 用于计划制定、创意头脑风暴等需要发散思维的任务
  */
 
+import { logger } from '@/lib/logger'
+
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || ''
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta'
 
@@ -119,7 +121,7 @@ export async function generateWithGemini(
       content,
     }
   } catch (error) {
-    console.error('Gemini API error:', error)
+    logger.error('Gemini API error', error)
     return {
       success: false,
       content: '',

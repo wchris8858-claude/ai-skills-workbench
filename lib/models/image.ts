@@ -6,6 +6,8 @@
  * - Nano Banana - 创意图像生成
  */
 
+import { logger } from '@/lib/logger'
+
 // 即梦配置
 const JIMENG_API_KEY = process.env.JIMENG_API_KEY || ''
 const JIMENG_API_BASE = process.env.JIMENG_API_BASE || 'https://api.jimeng.ai/v1'
@@ -90,7 +92,7 @@ export async function generateWithJimeng(
       images: data.data?.map((img) => img.url || img.b64_json || '') || [],
     }
   } catch (error) {
-    console.error('Jimeng API error:', error)
+    logger.error('Jimeng API error', error)
     return {
       success: false,
       images: [],
@@ -151,7 +153,7 @@ export async function generateWithNanoBanana(
       images: data.images || [],
     }
   } catch (error) {
-    console.error('Nano Banana API error:', error)
+    logger.error('Nano Banana API error', error)
     return {
       success: false,
       images: [],

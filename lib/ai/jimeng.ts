@@ -2,6 +2,8 @@
  * 即梦（Jimeng）AI 图像生成客户端
  */
 
+import { logger } from '@/lib/logger'
+
 export interface JimengRequest {
   model: string
   prompt: string
@@ -64,7 +66,7 @@ export async function callJimeng(request: JimengRequest): Promise<string[]> {
 
     return data.images.map(img => img.url)
   } catch (error) {
-    console.error('Jimeng API call failed:', error)
+    logger.error('Jimeng API call failed', error)
     throw error
   }
 }

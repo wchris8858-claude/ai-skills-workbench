@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { Upload, X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 import Image from 'next/image'
 
 interface PhotoAnalysis {
@@ -97,7 +98,7 @@ export function PhotoSelector({
           throw new Error('Analysis failed')
         }
       } catch (error) {
-        console.error('Error analyzing photo:', error)
+        logger.error('Error analyzing photo', error)
         const failedPhoto = { ...photo, analyzing: false, score: 0 }
         analyzedPhotos.push(failedPhoto)
 

@@ -3,8 +3,14 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { logger } from '@/lib/logger'
 import { User, UserRole } from '@/types'
 import { hashPassword, verifyPassword } from '@/lib/auth'
+
+// 用户表字段（不含密码）
+const USER_FIELDS = 'id, email, username, name, role, is_active, last_login_at, created_at'
+// 用户表字段（含密码，仅用于认证）
+const USER_FIELDS_WITH_PASSWORD = `${USER_FIELDS}, password_hash`
 
 // Supabase 客户端
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -104,7 +110,7 @@ export async function authenticateUser(username: string, password: string): Prom
 
   const { data, error } = await supabase
     .from('users')
-    .select('*')
+    .select(USER_FIELDS_WITH_PASSWORD)
     .eq('username', username)
     .single()
 
@@ -140,7 +146,7 @@ export async function getUserById(id: string): Promise<User | null> {
 
   const { data, error } = await supabase
     .from('users')
-    .select('*')
+    .select(USER_FIELDS)
     .eq('id', id)
     .single()
 
@@ -159,7 +165,7 @@ export async function getUserByUsername(username: string): Promise<User | null> 
 
   const { data, error } = await supabase
     .from('users')
-    .select('*')
+    .select(USER_FIELDS)
     .eq('username', username)
     .single()
 
@@ -178,7 +184,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
   const { data, error } = await supabase
     .from('users')
-    .select('*')
+    .select(USER_FIELDS)
     .eq('email', email)
     .single()
 
@@ -202,7 +208,7 @@ export async function getAllUsers(options?: {
   const limit = options?.limit || 20
   const offset = (page - 1) * limit
 
-  let query = supabase.from('users').select('*', { count: 'exact' })
+  let query = supabase.from('users').select(USER_FIELDS, { count: 'exact' })
 
   if (options?.role) {
     query = query.eq('role', options.role)
@@ -282,7 +288,7 @@ export async function emailExists(email: string): Promise<boolean> {
 
   // PGRST116 = no rows returned, 这不是错误
   if (error && error.code !== 'PGRST116') {
-    console.error('检查邮箱失败:', error)
+    logger.db.error('检查邮箱失败', error)
   }
 
   return !!data
@@ -303,7 +309,7 @@ export async function usernameExists(username: string): Promise<boolean> {
 
   // PGRST116 = no rows returned, 这不是错误
   if (error && error.code !== 'PGRST116') {
-    console.error('检查用户名失败:', error)
+    logger.db.error('检查用户名失败', error)
   }
 
   return !!data

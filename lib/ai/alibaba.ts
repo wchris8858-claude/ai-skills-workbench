@@ -2,6 +2,8 @@
  * 通义千问（Alibaba Qwen）AI 客户端
  */
 
+import { logger } from '@/lib/logger'
+
 export interface AlibabaRequest {
   model: string
   input: {
@@ -70,7 +72,7 @@ export async function callAlibaba(request: AlibabaRequest): Promise<string> {
 
     return data.output.text
   } catch (error) {
-    console.error('Alibaba API call failed:', error)
+    logger.error('Alibaba API call failed', error)
     throw error
   }
 }
