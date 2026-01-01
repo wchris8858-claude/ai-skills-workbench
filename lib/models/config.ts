@@ -3,10 +3,12 @@
  *
  * 模型分工策略：
  * - 文字创作类：Claude (Anthropic)
- * - 计划和想法类：Gemini (Google)
+ * - 计划和想法类：Gemini (Google) / 豆包 (Doubao)
  * - 图像生成：即梦 (Jimeng) / Nano Banana
  * - 视频生成：Veo (Google)
- * - 语音识别：讯飞 (iFlytek)
+ * - 语音识别：讯飞 (iFlytek) / SiliconFlow
+ *
+ * 火山引擎服务（即梦、豆包）共用 AKSK 认证
  */
 
 import { logger } from '@/lib/logger'
@@ -16,6 +18,7 @@ export type ModelProvider =
   | 'anthropic'   // Claude
   | 'google'      // Gemini
   | 'siliconflow' // SiliconFlow
+  | 'doubao'      // 豆包 (火山方舟)
   | 'image'       // 图像生成模型
 
 // 模型类型
@@ -171,6 +174,42 @@ export const AVAILABLE_MODELS = {
       model: 'stabilityai/stable-diffusion-3-5-large',
       type: 'image' as const,
       description: 'Stable Diffusion 3.5 Large - 高质量图像生成',
+    },
+  },
+
+  // 豆包系列 - 火山方舟大模型（与即梦共用AKSK）
+  doubao: {
+    'doubao-1.5-pro': {
+      provider: 'doubao' as const,
+      model: 'doubao-1-5-pro-256k-250115',
+      type: 'text' as const,
+      temperature: 0.7,
+      maxTokens: 4096,
+      description: '豆包 1.5 Pro - 最新旗舰模型，256K上下文',
+    },
+    'doubao-1.5-lite': {
+      provider: 'doubao' as const,
+      model: 'doubao-1-5-lite-32k-250115',
+      type: 'text' as const,
+      temperature: 0.7,
+      maxTokens: 4096,
+      description: '豆包 1.5 Lite - 轻量快速模型',
+    },
+    'doubao-seed-1.6': {
+      provider: 'doubao' as const,
+      model: 'doubao-seed-1-6-thinking-250428',
+      type: 'text' as const,
+      temperature: 0.7,
+      maxTokens: 4096,
+      description: '豆包 Seed 1.6 - 深度思考模型',
+    },
+    'doubao-vision': {
+      provider: 'doubao' as const,
+      model: 'doubao-1-5-vision-pro-250328',
+      type: 'vision' as const,
+      temperature: 0.7,
+      maxTokens: 4096,
+      description: '豆包 Vision - 多模态视觉理解',
     },
   },
 
