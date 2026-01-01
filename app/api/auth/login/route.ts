@@ -17,15 +17,13 @@ const LoginSchema = z.object({
 })
 
 async function handler(request: NextRequest) {
-  // 获取客户端 IP 用于速率限制
-  const clientIP = getClientIP(request)
-
-  // 检查登录速率限制（防止暴力破解）
-  const rateLimitResult = checkRateLimit(clientIP, 'api/auth/login')
-  if (!rateLimitResult.allowed) {
-    const retryAfter = Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)
-    throw createError.tooManyRequests(`登录尝试过于频繁，请 ${retryAfter} 秒后再试`)
-  }
+  // 临时禁用限流（调试用）
+  // const clientIP = getClientIP(request)
+  // const rateLimitResult = checkRateLimit(clientIP, 'api/auth/login')
+  // if (!rateLimitResult.allowed) {
+  //   const retryAfter = Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)
+  //   throw createError.tooManyRequests(`登录尝试过于频繁，请 ${retryAfter} 秒后再试`)
+  // }
 
   if (!isSupabaseAdminConfigured) {
     throw createError.serviceUnavailable('系统配置未完成')
@@ -45,12 +43,12 @@ async function handler(request: NextRequest) {
   const user = await authenticateUser(username, password)
 
   if (!user) {
-    // 登录失败时，额外检查失败次数限制
-    const failedRateLimit = checkRateLimit(clientIP, 'api/auth/login:failed')
-    if (!failedRateLimit.allowed) {
-      const retryAfter = Math.ceil((failedRateLimit.resetTime - Date.now()) / 1000)
-      throw createError.tooManyRequests(`登录失败次数过多，请 ${Math.ceil(retryAfter / 60)} 分钟后再试`)
-    }
+    // 临时禁用限流（调试用）
+    // const failedRateLimit = checkRateLimit(clientIP, 'api/auth/login:failed')
+    // if (!failedRateLimit.allowed) {
+    //   const retryAfter = Math.ceil((failedRateLimit.resetTime - Date.now()) / 1000)
+    //   throw createError.tooManyRequests(`登录失败次数过多，请 ${Math.ceil(retryAfter / 60)} 分钟后再试`)
+    // }
     throw createError.unauthorized('用户名或密码错误')
   }
 
