@@ -188,6 +188,12 @@ export const AVAILABLE_MODELS = {
       type: 'image' as const,
       description: 'Nano Banana Pro - 创意图像生成',
     },
+    'jimeng': {
+      provider: 'image' as const,
+      model: 'jimeng-2.1',
+      type: 'image' as const,
+      description: '即梦 2.1 - 火山引擎图像生成',
+    },
   },
 }
 
@@ -250,16 +256,40 @@ export const SKILL_MODEL_CONFIG: Record<string, SkillModelMapping> = {
     },
   },
 
-  // 海报制作 - Gemini Vision + GPT Image
-  'poster-creator': {
+  // 小红书笔记 - Claude Opus 创作
+  'xiaohongshu': {
     text: {
-      ...AVAILABLE_MODELS.google['gemini-pro-vision'],
-      temperature: 0.6,
+      ...AVAILABLE_MODELS.anthropic['claude-opus'],
+      temperature: 0.8, // 高创意性
     },
-    image: AVAILABLE_MODELS.image['gpt-image'],
   },
 
-  // AI 选片修片 - Claude + SiliconFlow Vision 分析 + Nano Banana 生成
+  // 活动策划 - Claude Opus 策划
+  'campaign-planner': {
+    text: {
+      ...AVAILABLE_MODELS.anthropic['claude-opus'],
+      temperature: 0.7,
+    },
+  },
+
+  // 海报文案 - Claude Opus + 即梦图像生成
+  'poster-creator': {
+    text: {
+      ...AVAILABLE_MODELS.anthropic['claude-opus'],
+      temperature: 0.6,
+    },
+    image: AVAILABLE_MODELS.image['jimeng'],
+  },
+
+  // 数据分析 - Claude Opus 分析
+  'data-analyst': {
+    text: {
+      ...AVAILABLE_MODELS.anthropic['claude-opus'],
+      temperature: 0.3, // 客观分析
+    },
+  },
+
+  // AI 选片修片 - Claude + SiliconFlow Vision 分析 + 即梦图像生成
   'photo-selector': {
     text: {
       ...AVAILABLE_MODELS.anthropic['claude-opus'],
@@ -270,7 +300,7 @@ export const SKILL_MODEL_CONFIG: Record<string, SkillModelMapping> = {
       type: 'vision' as const,
       temperature: 0.3,
     },
-    image: AVAILABLE_MODELS.image['nano-banana'],
+    image: AVAILABLE_MODELS.image['jimeng'],
   },
 
   // =========== 扩展技能 ===========
