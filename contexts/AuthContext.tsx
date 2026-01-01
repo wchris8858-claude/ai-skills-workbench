@@ -56,7 +56,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await res.json()
 
     if (!res.ok) {
-      throw new Error(data.error || '登录失败')
+      // API 返回格式: { error: { code, message } }
+      const errorMessage = typeof data.error === 'object'
+        ? data.error?.message
+        : data.error
+      throw new Error(errorMessage || '登录失败')
     }
 
     setUser(data.user)
