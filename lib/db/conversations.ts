@@ -289,9 +289,10 @@ export async function searchConversations(
   query: string
 ): Promise<Omit<Conversation, 'messages'>[]> {
   // 定义 join 查询的结果类型
+  // Supabase 联合查询返回数组格式
   interface MessageWithConversation {
     conversation_id: string
-    conversations: DbConversation | null
+    conversations: DbConversation[]
   }
 
   const { data, error } = await getDb()
@@ -312,7 +313,8 @@ export async function searchConversations(
   // 去重并转换
   const uniqueConversations = new Map()
   for (const item of (data || []) as MessageWithConversation[]) {
-    const conv = item.conversations
+    // Supabase 联合查询返回数组，取第一个元素
+    const conv = item.conversations?.[0]
     if (conv && !uniqueConversations.has(conv.id)) {
       uniqueConversations.set(conv.id, dbConversationToConversation(conv))
     }
