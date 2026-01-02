@@ -13,7 +13,7 @@ import { z } from 'zod'
 
 // 创建用户验证 schema
 const CreateUserSchema = z.object({
-  email: z.string().email('邮箱格式不正确'),
+  email: z.string().email('邮箱格式不正确').optional().or(z.literal('')),  // 邮箱可选
   username: z.string().min(3, '用户名至少3个字符').max(50, '用户名最多50个字符')
     .regex(/^[a-zA-Z0-9_]+$/, '用户名只能包含字母、数字和下划线'),
   password: z.string().min(6, '密码至少6个字符').max(50, '密码最多50个字符'),
@@ -94,13 +94,13 @@ async function postHandler(request: NextRequest) {
     throw createError.validation('该用户名已被使用')
   }
 
-  // 检查邮箱是否已存在
-  if (await emailExists(email)) {
+  // 检查邮箱是否已存在（仅当提供了邮箱时）
+  if (email && await emailExists(email)) {
     throw createError.validation('该邮箱已被注册')
   }
 
-  // 创建用户
-  const user = await createUser({ email, username, password, name, role })
+  // 创建用户（邮箱可为空）
+  const user = await createUser({ email: email || undefined, username, password, name, role })
 
   return NextResponse.json({ user }, { status: 201 })
 }

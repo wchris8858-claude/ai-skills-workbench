@@ -331,7 +331,7 @@ export function SiteHeader() {
                       {/* 用户信息 */}
                       <div className="px-3 py-3 border-b border-border/60 mb-2">
                         <p className="font-heading font-semibold text-sm">{user.name || user.username}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
+                        {user.email && <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>}
                         <div className="mt-2 flex items-center gap-1.5">
                           <span className={cn(
                             'px-2 py-0.5 rounded-full text-xs font-medium',

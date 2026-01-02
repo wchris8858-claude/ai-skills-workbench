@@ -136,10 +136,7 @@ export default function UsersPage() {
       setError('请输入用户名')
       return
     }
-    if (!newUser.email) {
-      setError('请输入邮箱')
-      return
-    }
+    // 邮箱为可选项，不再强制验证
     if (!newUser.password) {
       setError('请输入密码')
       return
@@ -323,11 +320,11 @@ export default function UsersPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="email">邮箱 *</Label>
+                  <Label htmlFor="email">邮箱（可选）</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="user@example.com"
+                    placeholder="user@example.com（选填）"
                     value={newUser.email}
                     onChange={e => setNewUser(prev => ({ ...prev, email: e.target.value }))}
                   />
@@ -498,7 +495,7 @@ export default function UsersPage() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.email || '-'}</TableCell>
                       <TableCell>{user.name || '-'}</TableCell>
                       <TableCell>
                         <Select

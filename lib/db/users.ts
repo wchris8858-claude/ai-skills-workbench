@@ -39,7 +39,7 @@ function getSupabaseAdmin(): SupabaseClient {
 function toUser(data: Record<string, unknown>): User {
   return {
     id: data.id as string,
-    email: data.email as string,
+    email: data.email as string | undefined,  // 邮箱可选
     username: data.username as string,
     name: data.name as string | undefined,
     role: data.role as UserRole,
@@ -50,7 +50,7 @@ function toUser(data: Record<string, unknown>): User {
 }
 
 export interface CreateUserInput {
-  email: string
+  email?: string  // 邮箱可选
   username: string
   password: string
   name?: string
@@ -76,7 +76,7 @@ export async function createUser(input: CreateUserInput): Promise<User> {
   const { data, error } = await supabase
     .from('users')
     .insert({
-      email: input.email,
+      email: input.email || null,  // 邮箱可为空
       username: input.username,
       password_hash: passwordHash,
       name: input.name || null,

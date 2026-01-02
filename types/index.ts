@@ -4,7 +4,7 @@ export type InputType = 'text' | 'voice' | 'image'
 
 export interface User {
   id: string
-  email: string
+  email?: string  // 可选字段
   username: string
   name?: string
   role: UserRole
